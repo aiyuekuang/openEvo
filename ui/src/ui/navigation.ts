@@ -1,13 +1,13 @@
 import type { IconName } from "./icons.js";
 
 export const TAB_GROUPS = [
-  { label: "Chat", tabs: ["chat"] },
+  { label: "对话", tabs: ["chat"] },
   {
-    label: "Control",
+    label: "控制",
     tabs: ["overview", "channels", "instances", "sessions", "cron"],
   },
-  { label: "Agent", tabs: ["skills", "nodes"] },
-  { label: "Settings", tabs: ["config", "debug", "logs"] },
+  { label: "代理", tabs: ["skills", "nodes"] },
+  { label: "设置", tabs: ["config", "debug", "logs"] },
 ] as const;
 
 export type Tab =
@@ -132,56 +132,56 @@ export function iconForTab(tab: Tab): IconName {
 export function titleForTab(tab: Tab) {
   switch (tab) {
     case "overview":
-      return "Overview";
+      return "概览";
     case "channels":
-      return "Channels";
+      return "渠道";
     case "instances":
-      return "Instances";
+      return "实例";
     case "sessions":
-      return "Sessions";
+      return "会话";
     case "cron":
-      return "Cron Jobs";
+      return "定时任务";
     case "skills":
-      return "Skills";
+      return "技能";
     case "nodes":
-      return "Nodes";
+      return "节点";
     case "chat":
-      return "Chat";
+      return "对话";
     case "config":
-      return "Config";
+      return "配置";
     case "debug":
-      return "Debug";
+      return "调试";
     case "logs":
-      return "Logs";
+      return "日志";
     default:
-      return "Control";
+      return "控制台";
   }
 }
 
 export function subtitleForTab(tab: Tab) {
   switch (tab) {
     case "overview":
-      return "Gateway status, entry points, and a fast health read.";
+      return "Gateway 状态、入口和健康检查";
     case "channels":
-      return "Manage channels and settings.";
+      return "管理消息渠道和设置 (企业微信/钉钉/飞书)";
     case "instances":
-      return "Presence beacons from connected clients and nodes.";
+      return "已连接客户端和节点的存活信标";
     case "sessions":
-      return "Inspect active sessions and adjust per-session defaults.";
+      return "查看活跃会话和调整会话级配置";
     case "cron":
-      return "Schedule wakeups and recurring agent runs.";
+      return "定时唤醒和周期性代理运行";
     case "skills":
-      return "Manage skill availability and API key injection.";
+      return "管理技能可用性和 API Key 注入";
     case "nodes":
-      return "Paired devices, capabilities, and command exposure.";
+      return "已配对设备、能力和命令暴露";
     case "chat":
-      return "Direct gateway chat session for quick interventions.";
+      return "直接与 Gateway 对话";
     case "config":
-      return "Edit ~/.openclaw/openclaw.json safely.";
+      return "编辑 ~/.openclaw/openclaw.json 配置文件";
     case "debug":
-      return "Gateway snapshots, events, and manual RPC calls.";
+      return "Gateway 快照、事件和手动 RPC 调用";
     case "logs":
-      return "Live tail of the gateway file logs.";
+      return "实时查看 Gateway 日志";
     default:
       return "";
   }

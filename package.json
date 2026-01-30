@@ -25,7 +25,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "setup": "node openclaw.mjs onboard",
+    "init": "node openclaw.mjs onboard",
     "dev": "node openclaw.mjs --dev gateway --token dev123 --verbose",
     "start": "node openclaw.mjs gateway",
     "postinstall": "node scripts/postinstall.js",
