@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
   readConfigFileSnapshot: vi.fn(),
   writeConfigFile: vi.fn(),
   resolveGatewayPort: vi.fn(),
-  ensureControlUiAssetsBuilt: vi.fn(),
   createClackPrompter: vi.fn(),
   note: vi.fn(),
   printWizardHeader: vi.fn(),
@@ -36,9 +35,6 @@ vi.mock("../config/config.js", () => ({
   resolveGatewayPort: mocks.resolveGatewayPort,
 }));
 
-vi.mock("../infra/control-ui-assets.js", () => ({
-  ensureControlUiAssetsBuilt: mocks.ensureControlUiAssetsBuilt,
-}));
 
 vi.mock("../wizard/clack-prompter.js", () => ({
   createClackPrompter: mocks.createClackPrompter,

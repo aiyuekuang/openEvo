@@ -69,7 +69,6 @@ export default defineConfig({
         "src/agents/tools/slack-actions.ts",
 
         // Gateway server integration surfaces are intentionally validated via manual/e2e runs.
-        "src/gateway/control-ui.ts",
         "src/gateway/server-bridge.ts",
         "src/gateway/server-channels.ts",
         "src/gateway/server-methods/config.ts",

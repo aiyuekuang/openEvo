@@ -369,7 +369,7 @@ export async function runGatewayUpdate(opts: UpdateRunnerOptions = {}): Promise<
     const statusCheck = await runStep(
       step(
         "clean check",
-        ["git", "-C", gitRoot, "status", "--porcelain", "--", ":!dist/control-ui/"],
+        ["git", "-C", gitRoot, "status", "--porcelain"],
         gitRoot,
       ),
     );
@@ -670,22 +670,6 @@ export async function runGatewayUpdate(opts: UpdateRunnerOptions = {}): Promise<
 
     const buildStep = await runStep(step("build", managerScriptArgs(manager, "build"), gitRoot));
     steps.push(buildStep);
-
-    const uiBuildStep = await runStep(
-      step("ui:build", managerScriptArgs(manager, "ui:build"), gitRoot),
-    );
-    steps.push(uiBuildStep);
-
-    // Restore dist/control-ui/ to committed state to prevent dirty repo after update
-    // (ui:build regenerates assets with new hashes, which would block future updates)
-    const restoreUiStep = await runStep(
-      step(
-        "restore control-ui",
-        ["git", "-C", gitRoot, "checkout", "--", "dist/control-ui/"],
-        gitRoot,
-      ),
-    );
-    steps.push(restoreUiStep);
 
     const doctorStep = await runStep(
       step(
