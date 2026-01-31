@@ -85,6 +85,7 @@ export const channelsHandlers: GatewayRequestHandlers = {
     const cfg = loadConfig();
     const runtime = context.getRuntimeSnapshot();
     const plugins = listChannelPlugins();
+    console.log(`[channels.status] listChannelPlugins() returned ${plugins.length} plugins:`, plugins.map(p => p.id));
     const pluginMap = new Map<ChannelId, ChannelPlugin>(
       plugins.map((plugin) => [plugin.id, plugin]),
     );

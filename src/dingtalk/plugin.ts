@@ -44,26 +44,18 @@ function normalizeAccountId(accountId?: string | null): string {
 
 function listAccountIds(cfg: OpenClawConfig): string[] {
   const dingtalk = cfg.channels?.dingtalk as DingTalkChannelConfig | undefined;
-  if (!dingtalk) return [];
-
-  const ids = new Set<string>();
-
-  // 检查默认配置
-  if (dingtalk.appKey && dingtalk.appSecret) {
-    ids.add("default");
-  }
-
+  
   // 检查多账号配置
-  if (dingtalk.accounts) {
-    for (const accountId of Object.keys(dingtalk.accounts)) {
-      const account = dingtalk.accounts[accountId];
-      if (account?.appKey && account?.appSecret) {
-        ids.add(normalizeAccountId(accountId));
-      }
+  const accounts = dingtalk?.accounts;
+  if (accounts && typeof accounts === "object") {
+    const ids = Object.keys(accounts).filter(Boolean);
+    if (ids.length > 0) {
+      return ids.sort((a, b) => a.localeCompare(b));
     }
   }
 
-  return Array.from(ids);
+  // 始终返回默认账号
+  return ["default"];
 }
 
 function resolveAccount(
@@ -119,6 +111,47 @@ export const dingtalkPlugin: ChannelPlugin = {
   capabilities: {
     chatTypes: ["direct", "group"],
     media: true,
+  },
+  configSchema: {
+    schema: {
+      type: "object",
+      properties: {
+        appKey: { type: "string", description: "应用 AppKey" },
+        appSecret: { type: "string", description: "应用 AppSecret" },
+        webhookUrl: { type: "string", description: "机器人 Webhook URL" },
+        signSecret: { type: "string", description: "机器人加签密钥" },
+        token: { type: "string", description: "回调 Token" },
+        aesKey: { type: "string", description: "回调 AES Key" },
+        allowFrom: { type: "array", items: { type: "string" }, description: "允许的发送者列表" },
+        accounts: {
+          type: "object",
+          description: "多账号配置",
+          additionalProperties: {
+            type: "object",
+            properties: {
+              appKey: { type: "string" },
+              appSecret: { type: "string" },
+              webhookUrl: { type: "string" },
+              signSecret: { type: "string" },
+              token: { type: "string" },
+              aesKey: { type: "string" },
+              allowFrom: { type: "array", items: { type: "string" } },
+            },
+            required: ["appKey", "appSecret"],
+          },
+        },
+      },
+    },
+    uiHints: {
+      appKey: { label: "应用 AppKey", placeholder: "dingxxxxxx" },
+      appSecret: { label: "应用 AppSecret", sensitive: true },
+      webhookUrl: { label: "Webhook URL", placeholder: "https://oapi.dingtalk.com/robot/send?access_token=xxx" },
+      signSecret: { label: "加签密钥", sensitive: true, advanced: true },
+      token: { label: "回调 Token", advanced: true },
+      aesKey: { label: "回调 AES Key", advanced: true, sensitive: true },
+      allowFrom: { label: "允许的发送者", advanced: true },
+      accounts: { label: "多账号配置", advanced: true },
+    },
   },
   config: {
     listAccountIds: (cfg) => listAccountIds(cfg),

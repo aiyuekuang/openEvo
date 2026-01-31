@@ -41,26 +41,18 @@ function normalizeAccountId(accountId?: string | null): string {
 
 function listAccountIds(cfg: OpenClawConfig): string[] {
   const wecom = cfg.channels?.wecom as WeComChannelConfig | undefined;
-  if (!wecom) return [];
-
-  const ids = new Set<string>();
-
-  // 检查默认配置
-  if (wecom.corpId && wecom.agentId && wecom.secret) {
-    ids.add("default");
-  }
-
+  
   // 检查多账号配置
-  if (wecom.accounts) {
-    for (const accountId of Object.keys(wecom.accounts)) {
-      const account = wecom.accounts[accountId];
-      if (account?.corpId && account?.agentId && account?.secret) {
-        ids.add(normalizeAccountId(accountId));
-      }
+  const accounts = wecom?.accounts;
+  if (accounts && typeof accounts === "object") {
+    const ids = Object.keys(accounts).filter(Boolean);
+    if (ids.length > 0) {
+      return ids.sort((a, b) => a.localeCompare(b));
     }
   }
 
-  return Array.from(ids);
+  // 始终返回默认账号
+  return ["default"];
 }
 
 function resolveAccount(
@@ -114,6 +106,44 @@ export const wecomPlugin: ChannelPlugin = {
   capabilities: {
     chatTypes: ["direct", "group"],
     media: true,
+  },
+  configSchema: {
+    schema: {
+      type: "object",
+      properties: {
+        corpId: { type: "string", description: "企业ID" },
+        agentId: { type: ["number", "string"], description: "应用 AgentId" },
+        secret: { type: "string", description: "应用 Secret" },
+        token: { type: "string", description: "回调 Token" },
+        encodingAesKey: { type: "string", description: "回调 EncodingAESKey" },
+        allowFrom: { type: "array", items: { type: "string" }, description: "允许的发送者列表" },
+        accounts: {
+          type: "object",
+          description: "多账号配置",
+          additionalProperties: {
+            type: "object",
+            properties: {
+              corpId: { type: "string" },
+              agentId: { type: ["number", "string"] },
+              secret: { type: "string" },
+              token: { type: "string" },
+              encodingAesKey: { type: "string" },
+              allowFrom: { type: "array", items: { type: "string" } },
+            },
+            required: ["corpId", "agentId", "secret"],
+          },
+        },
+      },
+    },
+    uiHints: {
+      corpId: { label: "企业ID", placeholder: "ww12345678" },
+      agentId: { label: "应用 AgentId", placeholder: "1000002" },
+      secret: { label: "应用 Secret", sensitive: true },
+      token: { label: "回调 Token", advanced: true },
+      encodingAesKey: { label: "回调 EncodingAESKey", advanced: true, sensitive: true },
+      allowFrom: { label: "允许的发送者", advanced: true },
+      accounts: { label: "多账号配置", advanced: true },
+    },
   },
   config: {
     listAccountIds: (cfg) => listAccountIds(cfg),

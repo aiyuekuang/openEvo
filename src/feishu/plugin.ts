@@ -38,26 +38,18 @@ function normalizeAccountId(accountId?: string | null): string {
 
 function listAccountIds(cfg: OpenClawConfig): string[] {
   const feishu = cfg.channels?.feishu as FeishuChannelConfig | undefined;
-  if (!feishu) return [];
-
-  const ids = new Set<string>();
-
-  // 检查默认配置
-  if (feishu.appId && feishu.appSecret) {
-    ids.add("default");
-  }
-
+  
   // 检查多账号配置
-  if (feishu.accounts) {
-    for (const accountId of Object.keys(feishu.accounts)) {
-      const account = feishu.accounts[accountId];
-      if (account?.appId && account?.appSecret) {
-        ids.add(normalizeAccountId(accountId));
-      }
+  const accounts = feishu?.accounts;
+  if (accounts && typeof accounts === "object") {
+    const ids = Object.keys(accounts).filter(Boolean);
+    if (ids.length > 0) {
+      return ids.sort((a, b) => a.localeCompare(b));
     }
   }
 
-  return Array.from(ids);
+  // 始终返回默认账号
+  return ["default"];
 }
 
 function resolveAccount(
@@ -109,6 +101,41 @@ export const feishuPlugin: ChannelPlugin = {
   capabilities: {
     chatTypes: ["direct", "group"],
     media: true,
+  },
+  configSchema: {
+    schema: {
+      type: "object",
+      properties: {
+        appId: { type: "string", description: "应用 App ID" },
+        appSecret: { type: "string", description: "应用 App Secret" },
+        verificationToken: { type: "string", description: "事件订阅 Verification Token" },
+        encryptKey: { type: "string", description: "事件订阅 Encrypt Key" },
+        allowFrom: { type: "array", items: { type: "string" }, description: "允许的发送者列表" },
+        accounts: {
+          type: "object",
+          description: "多账号配置",
+          additionalProperties: {
+            type: "object",
+            properties: {
+              appId: { type: "string" },
+              appSecret: { type: "string" },
+              verificationToken: { type: "string" },
+              encryptKey: { type: "string" },
+              allowFrom: { type: "array", items: { type: "string" } },
+            },
+            required: ["appId", "appSecret"],
+          },
+        },
+      },
+    },
+    uiHints: {
+      appId: { label: "应用 App ID", placeholder: "cli_xxxxxx" },
+      appSecret: { label: "应用 App Secret", sensitive: true },
+      verificationToken: { label: "Verification Token", advanced: true },
+      encryptKey: { label: "Encrypt Key", advanced: true, sensitive: true },
+      allowFrom: { label: "允许的发送者", advanced: true },
+      accounts: { label: "多账号配置", advanced: true },
+    },
   },
   config: {
     listAccountIds: (cfg) => listAccountIds(cfg),

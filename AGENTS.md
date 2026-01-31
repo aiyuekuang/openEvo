@@ -20,7 +20,6 @@ pnpm build
 - `pnpm build` - 编译 TypeScript
 - `pnpm dev` - 开发模式
 - `pnpm gateway:watch` - Gateway 热重载
-- `pnpm ui:build` - 构建 UI
 
 ## Testing
 
@@ -34,7 +33,6 @@ pnpm build
 - **Channels** (`src/channels/`) - 渠道抽象层
 - **CLI** (`src/cli/`, `src/commands/`) - 命令行工具
 - **Config** (`src/config/`) - 配置系统
-- **UI** (`ui/`) - Web 前端
 
 ### 中国渠道 (Chinese Channels)
 
@@ -61,4 +59,4 @@ pnpm build
 - Runtime: Node 22+
 - Package Manager: pnpm
 - Language: TypeScript (ESM)
-- 配置文件: `~/.openclaw-cn/openclaw-cn.json`
+- 配置文件: `~/.openclaw/openclaw.json`

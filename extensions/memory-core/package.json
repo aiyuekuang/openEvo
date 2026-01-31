@@ -9,9 +9,9 @@
     ]
   },
   "peerDependencies": {
-    "openclaw": ">=2026.1.26"
+    "openclaw-cn": ">=0.1.0"
   },
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "openclaw-cn": "workspace:*"
   }
 }

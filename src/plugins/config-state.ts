@@ -13,7 +13,36 @@ export type NormalizedPluginsConfig = {
   entries: Record<string, { enabled?: boolean; config?: unknown }>;
 };
 
-export const BUNDLED_ENABLED_BY_DEFAULT = new Set<string>();
+export const BUNDLED_ENABLED_BY_DEFAULT = new Set<string>([
+  // 中国渠道 (Chinese Channels)
+  "wecom",
+  "dingtalk",
+  "feishu",
+  "qq",      // QQ (OneBot 协议)
+  "wechat",  // 个人微信 (Wechaty)
+
+  // 国际渠道 (International Channels)
+  "telegram",
+  "whatsapp",
+  "slack",
+  "discord",
+  "signal",
+  "googlechat",
+  "msteams",
+  "matrix",
+  "line",
+  "zalo",
+  "zalouser",
+  "imessage",
+  "bluebubbles",
+  "mattermost",
+  "nextcloud-talk",
+  "nostr",
+  "twitch",
+
+  // 核心插件 (Core Plugins)
+  "memory-core",
+]);
 
 const normalizeList = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
