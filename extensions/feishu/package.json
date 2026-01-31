@@ -1,0 +1,11 @@
+{
+  "name": "@openclaw/feishu",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenClaw 飞书渠道插件",
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

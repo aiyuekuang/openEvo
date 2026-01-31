@@ -1,0 +1,11 @@
+{
+  "name": "@openclaw/wecom",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenClaw 企业微信渠道插件",
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
