@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Spin } from 'antd';
 import { useAppStore } from './stores/app';
@@ -6,6 +6,7 @@ import { getGatewayClient } from './api/gateway';
 import Setup from './pages/Setup';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
+import Marketplace from './pages/Marketplace';
 import Layout from './components/Layout';
 
 // 从 URL 获取 token 参数
@@ -20,39 +21,44 @@ function App() {
   const loadFromConfig = useAppStore((state) => state.loadFromConfig);
   const setLoading = useAppStore((state) => state.setLoading);
   const gatewayPort = useAppStore((state) => state.gatewayPort);
-  const gatewayToken = useAppStore((state) => state.gatewayToken);
   const setGatewayToken = useAppStore((state) => state.setGatewayToken);
+  
+  const initDone = useRef(false);
 
-  // 优先使用 URL token，其次使用存储的 token
-  const effectiveToken = useMemo(() => {
-    const urlToken = getTokenFromUrl();
-    return urlToken || gatewayToken;
-  }, [gatewayToken]);
-
+  // 初始化：获取 token 并连接 Gateway
   useEffect(() => {
-    // 如果 URL 中有 token，保存到 store
-    const urlToken = getTokenFromUrl();
-    if (urlToken && urlToken !== gatewayToken) {
-      setGatewayToken(urlToken);
-    }
-  }, [gatewayToken, setGatewayToken]);
+    if (initDone.current) return;
+    initDone.current = true;
 
-  useEffect(() => {
-    // 尝试从 Gateway 获取配置
-    const loadConfig = async () => {
+    const init = async () => {
+      // 获取 token
+      let token: string | null = getTokenFromUrl();
+      
+      if (!token && window.electronAPI?.gateway?.getToken) {
+        try {
+          token = await window.electronAPI.gateway.getToken();
+        } catch {
+          // ignore
+        }
+      }
+
+      if (token) {
+        setGatewayToken(token);
+      }
+
+      // 连接 Gateway
       try {
-        const client = getGatewayClient(gatewayPort, effectiveToken || undefined);
+        const client = getGatewayClient(gatewayPort, token || undefined);
         await client.connect();
         const config = await client.getConfig();
         loadFromConfig(config as Record<string, unknown>);
       } catch {
-        // Gateway 未运行或连接失败，使用本地存储的状态
         setLoading(false);
       }
     };
 
-    loadConfig();
-  }, [gatewayPort, effectiveToken, loadFromConfig, setLoading]);
+    init();
+  }, [gatewayPort, loadFromConfig, setLoading, setGatewayToken]);
 
   // 加载中显示 loading
   if (isLoading) {
@@ -70,13 +76,14 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         {!isConfigured ? (
           <Route path="*" element={<Setup />} />
         ) : (
-          <Route element={<Layout />}>
+        <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

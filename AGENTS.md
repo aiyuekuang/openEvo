@@ -60,3 +60,53 @@ pnpm build
 - Package Manager: pnpm
 - Language: TypeScript (ESM)
 - 配置文件: `~/.openclaw/openclaw.json`
+
+## Skills (技能触发规则)
+
+以下技能在相关场景下**自动触发**，只要涉及一点相关内容就启用：
+
+### 1. Config-Driven Development (`.claude/skills/config-driven-dev/`)
+**触发条件** - 任何涉及以下内容时启用：
+- 新增功能、新指令、新开关
+- 修改行为（阈值、策略、过滤规则等）
+- 配置文件修改 (`openclaw.json`, `package.json` 配置项等)
+- 环境变量、常量定义
+- 讨论"默认值"、"可配置"、"开关"等概念
+
+### 2. UI/UX Design (`.claude/skills/ui-ux-design.md`)
+**触发条件** - 任何涉及以下内容时启用：
+- 用户界面、交互设计
+- CLI 命令输出格式、提示信息
+- 错误消息、用户反馈文案
+- 用户体验、流程设计
+- 文档结构、可读性优化
+
+### 3. Product Manager Prompts (`.claude/skills/product-manager-prompts/`)
+**触发条件** - 任何涉及以下内容时启用：
+- 产品需求、功能规划
+- 用户故事 (User Story)
+- PRD、需求文档
+- 用户画像、场景分析
+- 竞品分析、市场定位
+- 路线图、优先级排序
+- 问题定义、假设验证
+
+### 4. Code Review (`.claude/skills/code-review/`)
+**触发条件** - 任何涉及以下内容时启用：
+- 代码编写或修改后
+- PR/MR 提交前审查
+- 代码质量、安全检查
+- 提及 "review"、"检查"、"审查"
+- `git diff` 有未提交的改动
+- 安全漏洞扫描、OWASP Top 10
+
+### 5. Systematic Debugging (`.claude/skills/systematic-debugging/`)
+**触发条件** - 任何涉及以下内容时启用：
+- Bug 修复、问题排查
+- 测试失败、异常行为
+- 提及 "调试"、"debug"、"报错"、"error"
+- 运行时错误、崩溃、异常
+- "之前能跑"、"突然不工作了"
+- 间歇性失败、竞态条件
+
+**核心原则**: 不调查根因，就不修复！使用四阶段方法：根因调查 → 模式分析 → 假设测试 → 实施修复

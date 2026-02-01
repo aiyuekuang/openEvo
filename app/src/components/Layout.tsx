@@ -4,6 +4,7 @@ import {
   DashboardOutlined,
   SettingOutlined,
   RobotOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 
 const { Sider, Content } = AntLayout;
@@ -17,6 +18,11 @@ export default function Layout() {
       key: '/',
       icon: <DashboardOutlined />,
       label: '控制台',
+    },
+    {
+      key: '/marketplace',
+      icon: <AppstoreOutlined />,
+      label: '技能市场',
     },
     {
       key: '/settings',

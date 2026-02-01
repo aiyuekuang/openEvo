@@ -1,4 +1,5 @@
 import type { Command } from "commander";
+import chalk from "chalk";
 import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../agents/agent-scope.js";
 import {
   buildWorkspaceSkillStatus,
@@ -7,6 +8,23 @@ import {
 } from "../agents/skills-status.js";
 import { loadConfig } from "../config/config.js";
 import { defaultRuntime } from "../runtime.js";
+import {
+  browseByCategory,
+  checkUpdates,
+  disableSkill,
+  enableSkill,
+  getBuiltinSkills,
+  getInstalledSkill,
+  getInstalledSkills,
+  getSkillById,
+  installSkill,
+  searchSkills,
+  SKILL_CATEGORIES,
+  uninstallSkill,
+  updateSkill,
+  type SkillCategory,
+  type SkillPackage,
+} from "../skill-marketplace/index.js";
 import { formatDocsLink } from "../terminal/links.js";
 import { renderTable } from "../terminal/table.js";
 import { theme } from "../terminal/theme.js";
@@ -333,12 +351,15 @@ export function formatSkillsCheck(report: SkillStatusReport, opts: SkillsCheckOp
 export function registerSkillsCli(program: Command) {
   const skills = program
     .command("skills")
-    .description("List and inspect available skills")
+    .description("List, inspect, and manage skills")
     .addHelpText(
       "after",
       () =>
         `\n${theme.muted("Docs:")} ${formatDocsLink("/cli/skills", "docs.openclaw.ai/cli/skills")}\n`,
     );
+
+  // 注册技能市场子命令
+  registerSkillMarketplace(skills);
 
   skills
     .command("list")
@@ -402,5 +423,319 @@ export function registerSkillsCli(program: Command) {
       defaultRuntime.error(String(err));
       defaultRuntime.exit(1);
     }
+  });
+}
+
+// =============================================================================
+// 技能市场 CLI
+// =============================================================================
+
+const marketLogger = {
+  info: (msg: string) => console.log(msg),
+  warn: (msg: string) => console.log(chalk.yellow(msg)),
+  error: (msg: string) => console.log(chalk.red(msg)),
+};
+
+function formatMarketSkillItem(skill: SkillPackage, installed: boolean): string {
+  const icon = skill.icon ?? "📦";
+  const badge = skill.verified ? chalk.blue(" ✓") : "";
+  const featuredBadge = skill.featured ? chalk.yellow(" ⭐") : "";
+  const installedBadge = installed ? chalk.green(" [已安装]") : "";
+
+  return `${icon} ${chalk.bold(skill.name)}${badge}${featuredBadge}${installedBadge}
+   ${chalk.gray(skill.id)} v${skill.version}
+   ${skill.description}`;
+}
+
+function getCategoryLabel(category: SkillCategory): string {
+  const meta = SKILL_CATEGORIES.find((c) => c.id === category);
+  return meta ? `${meta.icon} ${meta.label}` : category;
+}
+
+/**
+ * 注册技能市场子命令
+ */
+function registerSkillMarketplace(skills: Command) {
+  const market = skills
+    .command("market")
+    .description("技能市场 - 发现、安装、管理技能包");
+
+  // openclaw skills market search <query>
+  market
+    .command("search [query]")
+    .description("搜索技能")
+    .option("-c, --category <category>", "按分类过滤")
+    .option("--verified", "只显示官方认证")
+    .option("--featured", "只显示推荐")
+    .option("-l, --limit <number>", "结果数量", "20")
+    .action(async (query: string | undefined, opts) => {
+      const result = await searchSkills({
+        query,
+        category: opts.category as SkillCategory | undefined,
+        verifiedOnly: opts.verified,
+        featuredOnly: opts.featured,
+        limit: parseInt(opts.limit, 10),
+      });
+
+      const installedSkills = await getInstalledSkills();
+      const installedIds = new Set(installedSkills.map((s) => s.id));
+
+      if (result.skills.length === 0) {
+        console.log(chalk.yellow("没有找到匹配的技能"));
+        return;
+      }
+
+      console.log(chalk.bold(`\n找到 ${result.total} 个技能:\n`));
+
+      for (const skill of result.skills) {
+        console.log(formatMarketSkillItem(skill, installedIds.has(skill.id)));
+        console.log("");
+      }
+
+      if (result.hasMore) {
+        console.log(chalk.gray(`还有 ${result.total - result.skills.length} 个结果...`));
+      }
+    });
+
+  // openclaw skills market browse [category]
+  market
+    .command("browse [category]")
+    .description("浏览技能分类")
+    .action(async (category: string | undefined) => {
+      if (!category) {
+        console.log(chalk.bold("\n技能分类:\n"));
+        for (const cat of SKILL_CATEGORIES) {
+          const count = getBuiltinSkills().filter((s) => s.category === cat.id).length;
+          console.log(`${cat.icon} ${chalk.bold(cat.label)} (${count})`);
+          console.log(chalk.gray(`   ${cat.description}`));
+          console.log(chalk.gray(`   openclaw skills market browse ${cat.id}\n`));
+        }
+        return;
+      }
+
+      const result = await browseByCategory(category as SkillCategory);
+      const installedSkills = await getInstalledSkills();
+      const installedIds = new Set(installedSkills.map((s) => s.id));
+
+      const catMeta = SKILL_CATEGORIES.find((c) => c.id === category);
+      console.log(chalk.bold(`\n${catMeta?.icon ?? "📁"} ${catMeta?.label ?? category}:\n`));
+
+      if (result.skills.length === 0) {
+        console.log(chalk.yellow("该分类下没有技能"));
+        return;
+      }
+
+      for (const skill of result.skills) {
+        console.log(formatMarketSkillItem(skill, installedIds.has(skill.id)));
+        console.log("");
+      }
+    });
+
+  // openclaw skills market show <skill-id>
+  market
+    .command("show <skill-id>")
+    .description("查看技能详情")
+    .action(async (skillId: string) => {
+      const skill = getSkillById(skillId);
+      if (!skill) {
+        console.log(chalk.red(`找不到技能: ${skillId}`));
+        return;
+      }
+
+      const installed = await getInstalledSkill(skillId);
+      const lines: string[] = [];
+
+      lines.push("");
+      lines.push(`${skill.icon ?? "📦"} ${chalk.bold.cyan(skill.name)} v${skill.version}`);
+      lines.push(chalk.gray(`   ${skill.id}`));
+      lines.push("");
+
+      if (skill.verified) lines.push(chalk.blue("   ✓ 官方认证"));
+      if (skill.featured) lines.push(chalk.yellow("   ⭐ 推荐技能"));
+      if (installed) lines.push(chalk.green("   ✓ 已安装"));
+
+      lines.push("");
+      lines.push(chalk.bold("描述"));
+      lines.push(`   ${skill.description}`);
+
+      lines.push("");
+      lines.push(chalk.bold("信息"));
+      lines.push(`   分类: ${getCategoryLabel(skill.category)}`);
+      lines.push(`   作者: ${skill.author.name}`);
+      lines.push(`   许可: ${skill.license}`);
+      if (skill.tags.length > 0) {
+        lines.push(`   标签: ${skill.tags.join(", ")}`);
+      }
+
+      console.log(lines.join("\n"));
+    });
+
+  // openclaw skills market install <skill-id>
+  market
+    .command("install <skill-id>")
+    .description("安装技能")
+    .option("-f, --force", "强制重新安装")
+    .action(async (skillId: string, opts) => {
+      const result = await installSkill(skillId, {
+        logger: marketLogger,
+        force: opts.force,
+      });
+
+      if (!result.ok) {
+        console.log(chalk.red(`\n安装失败: ${result.error}`));
+        process.exitCode = 1;
+      }
+    });
+
+  // openclaw skills market uninstall <skill-id>
+  market
+    .command("uninstall <skill-id>")
+    .description("卸载技能")
+    .action(async (skillId: string) => {
+      const result = await uninstallSkill(skillId, { logger: marketLogger });
+
+      if (!result.ok) {
+        console.log(chalk.red(`\n卸载失败: ${result.error}`));
+        process.exitCode = 1;
+      }
+    });
+
+  // openclaw skills market installed
+  market
+    .command("installed")
+    .description("列出已安装的技能")
+    .action(async () => {
+      const installedSkills = await getInstalledSkills();
+
+      if (installedSkills.length === 0) {
+        console.log(chalk.yellow("\n尚未安装任何技能"));
+        console.log(chalk.gray("使用 `openclaw skills market search` 发现技能"));
+        return;
+      }
+
+      console.log(chalk.bold(`\n已安装 ${installedSkills.length} 个技能:\n`));
+
+      for (const installed of installedSkills) {
+        const skill = getSkillById(installed.id);
+        const name = skill?.name ?? installed.id;
+        const icon = skill?.icon ?? "📦";
+
+        let statusBadge = "";
+        switch (installed.status) {
+          case "active":
+            statusBadge = chalk.green("● 活跃");
+            break;
+          case "disabled":
+            statusBadge = chalk.gray("○ 禁用");
+            break;
+          case "error":
+            statusBadge = chalk.red("✗ 错误");
+            break;
+        }
+
+        console.log(`${icon} ${chalk.bold(name)} v${installed.version}  ${statusBadge}`);
+        console.log(chalk.gray(`   ${installed.id}`));
+        console.log("");
+      }
+    });
+
+  // openclaw skills market outdated
+  market
+    .command("outdated")
+    .description("检查可更新的技能")
+    .action(async () => {
+      const updates = await checkUpdates();
+
+      if (updates.length === 0) {
+        console.log(chalk.green("\n所有技能已是最新版本 ✓"));
+        return;
+      }
+
+      console.log(chalk.bold(`\n${updates.length} 个技能可更新:\n`));
+
+      for (const update of updates) {
+        const skill = getSkillById(update.id);
+        const name = skill?.name ?? update.id;
+        console.log(
+          `${skill?.icon ?? "📦"} ${chalk.bold(name)}: ${chalk.red(update.currentVersion)} → ${chalk.green(update.latestVersion)}`,
+        );
+      }
+
+      console.log(chalk.gray("\n使用 `openclaw skills market update <skill-id>` 更新"));
+    });
+
+  // openclaw skills market update [skill-id]
+  market
+    .command("update [skill-id]")
+    .description("更新技能")
+    .option("-a, --all", "更新所有技能")
+    .action(async (skillId: string | undefined, opts) => {
+      if (opts.all) {
+        const updates = await checkUpdates();
+        if (updates.length === 0) {
+          console.log(chalk.green("\n所有技能已是最新版本 ✓"));
+          return;
+        }
+
+        console.log(chalk.bold(`\n更新 ${updates.length} 个技能...\n`));
+
+        for (const update of updates) {
+          await updateSkill(update.id, { logger: marketLogger });
+        }
+        return;
+      }
+
+      if (!skillId) {
+        console.log(chalk.red("请指定技能 ID 或使用 --all 更新所有"));
+        process.exitCode = 1;
+        return;
+      }
+
+      const result = await updateSkill(skillId, { logger: marketLogger });
+      if (!result.ok) {
+        console.log(chalk.red(`\n更新失败: ${result.error}`));
+        process.exitCode = 1;
+      }
+    });
+
+  // openclaw skills market enable <skill-id>
+  market
+    .command("enable <skill-id>")
+    .description("启用技能")
+    .action(async (skillId: string) => {
+      const result = await enableSkill(skillId, { logger: marketLogger });
+      if (!result.ok) {
+        console.log(chalk.red(result.error));
+        process.exitCode = 1;
+      }
+    });
+
+  // openclaw skills market disable <skill-id>
+  market
+    .command("disable <skill-id>")
+    .description("禁用技能")
+    .action(async (skillId: string) => {
+      const result = await disableSkill(skillId, { logger: marketLogger });
+      if (!result.ok) {
+        console.log(chalk.red(result.error));
+        process.exitCode = 1;
+      }
+    });
+
+  // Default action - show featured
+  market.action(async () => {
+    const result = await searchSkills({ featuredOnly: true });
+    const installedSkills = await getInstalledSkills();
+    const installedIds = new Set(installedSkills.map((s) => s.id));
+
+    console.log(chalk.bold("\n⭐ 推荐技能:\n"));
+
+    for (const skill of result.skills) {
+      console.log(formatMarketSkillItem(skill, installedIds.has(skill.id)));
+      console.log("");
+    }
+
+    console.log(chalk.gray("使用 `openclaw skills market search <query>` 搜索更多技能"));
+    console.log(chalk.gray("使用 `openclaw skills market browse` 浏览分类"));
   });
 }

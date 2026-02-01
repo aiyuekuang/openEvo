@@ -9,14 +9,7 @@ import { normalizeChannelId } from "../../channels/registry.js";
 import { listPairingChannels } from "../../channels/plugins/pairing.js";
 import { logVerbose } from "../../globals.js";
 import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "../../routing/session-key.js";
-import { resolveDiscordAccount } from "../../discord/accounts.js";
-import { resolveIMessageAccount } from "../../imessage/accounts.js";
-import { resolveSignalAccount } from "../../signal/accounts.js";
-import { resolveSlackAccount } from "../../slack/accounts.js";
-import { resolveTelegramAccount } from "../../telegram/accounts.js";
-import { resolveWhatsAppAccount } from "../../web/accounts.js";
-import { resolveSlackUserAllowlist } from "../../slack/resolve-users.js";
-import { resolveDiscordUserAllowlist } from "../../discord/resolve-users.js";
+// OpenClaw CN: 移除海外渠道 imports (discord, imessage, signal, slack, telegram, whatsapp)
 import {
   addChannelAllowFromStoreEntry,
   readChannelAllowFromStore,
@@ -232,13 +225,12 @@ function resolveChannelAllowFromPaths(
   scope: AllowlistScope,
 ): string[] | null {
   if (scope === "all") return null;
+  // OpenClaw CN: 中国渠道支持 (wecom, dingtalk, feishu)
   if (scope === "dm") {
-    if (channelId === "slack" || channelId === "discord") return ["dm", "allowFrom"];
     if (
-      channelId === "telegram" ||
-      channelId === "whatsapp" ||
-      channelId === "signal" ||
-      channelId === "imessage"
+      channelId === "wecom" ||
+      channelId === "dingtalk" ||
+      channelId === "feishu"
     ) {
       return ["allowFrom"];
     }
@@ -246,10 +238,9 @@ function resolveChannelAllowFromPaths(
   }
   if (scope === "group") {
     if (
-      channelId === "telegram" ||
-      channelId === "whatsapp" ||
-      channelId === "signal" ||
-      channelId === "imessage"
+      channelId === "wecom" ||
+      channelId === "dingtalk" ||
+      channelId === "feishu"
     ) {
       return ["groupAllowFrom"];
     }
@@ -258,37 +249,7 @@ function resolveChannelAllowFromPaths(
   return null;
 }
 
-async function resolveSlackNames(params: {
-  cfg: OpenClawConfig;
-  accountId?: string | null;
-  entries: string[];
-}) {
-  const account = resolveSlackAccount({ cfg: params.cfg, accountId: params.accountId });
-  const token = account.config.userToken?.trim() || account.botToken?.trim();
-  if (!token) return new Map<string, string>();
-  const resolved = await resolveSlackUserAllowlist({ token, entries: params.entries });
-  const map = new Map<string, string>();
-  for (const entry of resolved) {
-    if (entry.resolved && entry.name) map.set(entry.input, entry.name);
-  }
-  return map;
-}
-
-async function resolveDiscordNames(params: {
-  cfg: OpenClawConfig;
-  accountId?: string | null;
-  entries: string[];
-}) {
-  const account = resolveDiscordAccount({ cfg: params.cfg, accountId: params.accountId });
-  const token = account.token?.trim();
-  if (!token) return new Map<string, string>();
-  const resolved = await resolveDiscordUserAllowlist({ token, entries: params.entries });
-  const map = new Map<string, string>();
-  for (const entry of resolved) {
-    if (entry.resolved && entry.name) map.set(entry.input, entry.name);
-  }
-  return map;
-}
+// OpenClaw CN: 移除海外渠道的用户名称解析函数 (resolveSlackNames, resolveDiscordNames)
 
 export const handleAllowlistCommand: CommandHandler = async (params, allowTextCommands) => {
   if (!allowTextCommands) return null;
@@ -326,81 +287,16 @@ export const handleAllowlistCommand: CommandHandler = async (params, allowTextCo
 
     let dmAllowFrom: string[] = [];
     let groupAllowFrom: string[] = [];
-    let groupOverrides: Array<{ label: string; entries: string[] }> = [];
+    const groupOverrides: Array<{ label: string; entries: string[] }> = [];
     let dmPolicy: string | undefined;
     let groupPolicy: string | undefined;
 
-    if (channelId === "telegram") {
-      const account = resolveTelegramAccount({ cfg: params.cfg, accountId });
-      dmAllowFrom = (account.config.allowFrom ?? []).map(String);
-      groupAllowFrom = (account.config.groupAllowFrom ?? []).map(String);
-      dmPolicy = account.config.dmPolicy;
-      groupPolicy = account.config.groupPolicy;
-      const groups = account.config.groups ?? {};
-      for (const [groupId, groupCfg] of Object.entries(groups)) {
-        const entries = (groupCfg?.allowFrom ?? []).map(String).filter(Boolean);
-        if (entries.length > 0) {
-          groupOverrides.push({ label: groupId, entries });
-        }
-        const topics = groupCfg?.topics ?? {};
-        for (const [topicId, topicCfg] of Object.entries(topics)) {
-          const topicEntries = (topicCfg?.allowFrom ?? []).map(String).filter(Boolean);
-          if (topicEntries.length > 0) {
-            groupOverrides.push({ label: `${groupId} topic ${topicId}`, entries: topicEntries });
-          }
-        }
-      }
-    } else if (channelId === "whatsapp") {
-      const account = resolveWhatsAppAccount({ cfg: params.cfg, accountId });
-      dmAllowFrom = (account.allowFrom ?? []).map(String);
-      groupAllowFrom = (account.groupAllowFrom ?? []).map(String);
-      dmPolicy = account.dmPolicy;
-      groupPolicy = account.groupPolicy;
-    } else if (channelId === "signal") {
-      const account = resolveSignalAccount({ cfg: params.cfg, accountId });
-      dmAllowFrom = (account.config.allowFrom ?? []).map(String);
-      groupAllowFrom = (account.config.groupAllowFrom ?? []).map(String);
-      dmPolicy = account.config.dmPolicy;
-      groupPolicy = account.config.groupPolicy;
-    } else if (channelId === "imessage") {
-      const account = resolveIMessageAccount({ cfg: params.cfg, accountId });
-      dmAllowFrom = (account.config.allowFrom ?? []).map(String);
-      groupAllowFrom = (account.config.groupAllowFrom ?? []).map(String);
-      dmPolicy = account.config.dmPolicy;
-      groupPolicy = account.config.groupPolicy;
-    } else if (channelId === "slack") {
-      const account = resolveSlackAccount({ cfg: params.cfg, accountId });
-      dmAllowFrom = (account.dm?.allowFrom ?? []).map(String);
-      groupPolicy = account.groupPolicy;
-      const channels = account.channels ?? {};
-      groupOverrides = Object.entries(channels)
-        .map(([key, value]) => {
-          const entries = (value?.users ?? []).map(String).filter(Boolean);
-          return entries.length > 0 ? { label: key, entries } : null;
-        })
-        .filter(Boolean) as Array<{ label: string; entries: string[] }>;
-    } else if (channelId === "discord") {
-      const account = resolveDiscordAccount({ cfg: params.cfg, accountId });
-      dmAllowFrom = (account.config.dm?.allowFrom ?? []).map(String);
-      groupPolicy = account.config.groupPolicy;
-      const guilds = account.config.guilds ?? {};
-      for (const [guildKey, guildCfg] of Object.entries(guilds)) {
-        const entries = (guildCfg?.users ?? []).map(String).filter(Boolean);
-        if (entries.length > 0) {
-          groupOverrides.push({ label: `guild ${guildKey}`, entries });
-        }
-        const channels = guildCfg?.channels ?? {};
-        for (const [channelKey, channelCfg] of Object.entries(channels)) {
-          const channelEntries = (channelCfg?.users ?? []).map(String).filter(Boolean);
-          if (channelEntries.length > 0) {
-            groupOverrides.push({
-              label: `guild ${guildKey} / channel ${channelKey}`,
-              entries: channelEntries,
-            });
-          }
-        }
-      }
-    }
+    // OpenClaw CN: 中国渠道支持 - 待添加具体渠道实现
+    // TODO: 添加 wecom, dingtalk, feishu 的 allowlist 解析
+    void dmAllowFrom;
+    void groupAllowFrom;
+    void dmPolicy;
+    void groupPolicy;
 
     const dmDisplay = normalizeAllowFrom({
       cfg: params.cfg,
@@ -421,26 +317,9 @@ export const handleAllowlistCommand: CommandHandler = async (params, allowTextCo
       accountId,
       values: groupOverrideEntries,
     });
-    const resolvedDm =
-      parsed.resolve && dmDisplay.length > 0 && channelId === "slack"
-        ? await resolveSlackNames({ cfg: params.cfg, accountId, entries: dmDisplay })
-        : parsed.resolve && dmDisplay.length > 0 && channelId === "discord"
-          ? await resolveDiscordNames({ cfg: params.cfg, accountId, entries: dmDisplay })
-          : undefined;
-    const resolvedGroup =
-      parsed.resolve && groupOverrideDisplay.length > 0 && channelId === "slack"
-        ? await resolveSlackNames({
-            cfg: params.cfg,
-            accountId,
-            entries: groupOverrideDisplay,
-          })
-        : parsed.resolve && groupOverrideDisplay.length > 0 && channelId === "discord"
-          ? await resolveDiscordNames({
-              cfg: params.cfg,
-              accountId,
-              entries: groupOverrideDisplay,
-            })
-          : undefined;
+    // OpenClaw CN: 移除 slack/discord 的用户名称解析
+    const resolvedDm = undefined;
+    const resolvedGroup = undefined;
 
     const lines: string[] = ["🧾 Allowlist"];
     lines.push(`Channel: ${channelId}${accountId ? ` (account ${accountId})` : ""}`);

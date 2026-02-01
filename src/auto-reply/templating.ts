@@ -1,5 +1,12 @@
 import type { ChannelId } from "../channels/plugins/types.js";
-import type { StickerMetadata } from "../telegram/bot/types.js";
+// OpenClaw CN: 移除 telegram 类型引用
+export type StickerMetadata = {
+  emoji?: string;
+  setName?: string;
+  fileId?: string;
+  uniqueId?: string;
+  description?: string;
+};
 import type { InternalMessageChannel } from "../utils/message-channel.js";
 import type { CommandArgs } from "./commands-registry.types.js";
 import type {

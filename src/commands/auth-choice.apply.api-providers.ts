@@ -11,6 +11,15 @@ import {
   applyGoogleGeminiModelDefault,
   GOOGLE_GEMINI_DEFAULT_MODEL,
 } from "./google-gemini-model-default.js";
+import { openUrl } from "./onboard-helpers.js";
+
+// API Key URLs for auto-open browser
+const API_KEY_URLS = {
+  gemini: "https://aistudio.google.com/app/apikey",
+  openrouter: "https://openrouter.ai/keys",
+  moonshot: "https://platform.moonshot.cn/console/api-keys",
+  zai: "https://api.z.ai/",
+} as const;
 import {
   applyAuthProfileConfig,
   applyKimiCodeConfig,
@@ -140,8 +149,18 @@ export async function applyAuthChoiceApiProviders(
     }
 
     if (!hasCredential) {
+      // Auto-open browser to API keys page
+      await params.prompter.note(
+        [
+          "Opening OpenRouter to get your API key...",
+          `URL: ${API_KEY_URLS.openrouter}`,
+        ].join("\n"),
+        "OpenRouter API Key",
+      );
+      await openUrl(API_KEY_URLS.openrouter);
+
       const key = await params.prompter.text({
-        message: "Enter OpenRouter API key",
+        message: "Paste your OpenRouter API key",
         validate: validateApiKeyInput,
       });
       await setOpenrouterApiKey(normalizeApiKeyInput(String(key)), params.agentDir);
@@ -244,8 +263,18 @@ export async function applyAuthChoiceApiProviders(
       }
     }
     if (!hasCredential) {
+      // Auto-open browser to API keys page
+      await params.prompter.note(
+        [
+          "Opening Moonshot Platform to get your API key...",
+          `URL: ${API_KEY_URLS.moonshot}`,
+        ].join("\n"),
+        "Moonshot API Key",
+      );
+      await openUrl(API_KEY_URLS.moonshot);
+
       const key = await params.prompter.text({
-        message: "Enter Moonshot API key",
+        message: "Paste your Moonshot API key",
         validate: validateApiKeyInput,
       });
       await setMoonshotApiKey(normalizeApiKeyInput(String(key)), params.agentDir);
@@ -347,8 +376,18 @@ export async function applyAuthChoiceApiProviders(
       }
     }
     if (!hasCredential) {
+      // Auto-open browser to API keys page
+      await params.prompter.note(
+        [
+          "Opening Google AI Studio to get your API key...",
+          `URL: ${API_KEY_URLS.gemini}`,
+        ].join("\n"),
+        "Gemini API Key",
+      );
+      await openUrl(API_KEY_URLS.gemini);
+
       const key = await params.prompter.text({
-        message: "Enter Gemini API key",
+        message: "Paste your Gemini API key",
         validate: validateApiKeyInput,
       });
       await setGeminiApiKey(normalizeApiKeyInput(String(key)), params.agentDir);

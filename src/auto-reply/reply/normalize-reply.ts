@@ -6,7 +6,9 @@ import {
   resolveResponsePrefixTemplate,
   type ResponsePrefixContext,
 } from "./response-prefix-template.js";
-import { hasLineDirectives, parseLineDirectives } from "./line-directives.js";
+// OpenClaw CN: 移除 LINE directives
+const hasLineDirectives = (_text: string): boolean => false;
+const parseLineDirectives = (payload: ReplyPayload): ReplyPayload => payload;
 
 export type NormalizeReplySkipReason = "empty" | "silent" | "heartbeat";
 

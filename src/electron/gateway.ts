@@ -1,5 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import { fileURLToPath } from 'url';
 import { app } from 'electron';
 import http from 'http';
@@ -13,6 +15,27 @@ export class GatewayManager {
   private process: ChildProcess | null = null;
   private status: GatewayStatus = 'stopped';
   private port: number = 18789;
+  private token: string | null = null;
+
+  constructor() {
+    this.loadToken();
+  }
+
+  /**
+   * 从配置文件加载 gateway token
+   */
+  private loadToken(): void {
+    try {
+      const configPath = path.join(os.homedir(), '.openclaw', 'openclaw.json');
+      if (fs.existsSync(configPath)) {
+        const content = fs.readFileSync(configPath, 'utf-8');
+        const config = JSON.parse(content);
+        this.token = config?.gateway?.auth?.token || null;
+      }
+    } catch (error) {
+      console.error('[Gateway] Failed to load token:', error);
+    }
+  }
 
   getStatus(): GatewayStatus {
     return this.status;
@@ -20,6 +43,10 @@ export class GatewayManager {
 
   getPort(): number {
     return this.port;
+  }
+
+  getToken(): string | null {
+    return this.token;
   }
 
   /**

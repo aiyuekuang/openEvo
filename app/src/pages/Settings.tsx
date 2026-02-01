@@ -7,6 +7,7 @@ import {
   message, 
   Spin,
   Modal,
+  Drawer,
   Typography,
 } from 'antd';
 import { 
@@ -16,7 +17,9 @@ import {
   DingtalkOutlined,
   GithubOutlined,
   ApiOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '../stores/app';
 import { getGatewayClient } from '../api/gateway';
 
@@ -30,15 +33,28 @@ interface ModelDef {
   color: string;
   configKey: string;
   icon?: React.ReactNode;
+  apiKeyUrl?: string; // API Key 获取页面
+  group: 'domestic' | 'international'; // 分组
 }
 
-const MODEL_DEFS: ModelDef[] = [
-  { key: 'github-copilot', label: 'GitHub Copilot', color: '#24292e', configKey: 'github-copilot:github', icon: <GithubOutlined /> },
-  { key: 'moonshot', label: 'Moonshot (Kimi)', color: '#1677ff', configKey: 'moonshot', icon: <ApiOutlined /> },
-  { key: 'qwen', label: '通义千问', color: '#ff6a00', configKey: 'qwen', icon: <ApiOutlined /> },
-  { key: 'zhipu', label: '智谱 GLM', color: '#0ea5e9', configKey: 'zhipu', icon: <ApiOutlined /> },
-  { key: 'deepseek', label: 'DeepSeek', color: '#10b981', configKey: 'deepseek', icon: <ApiOutlined /> },
+// 国产模型
+const DOMESTIC_MODELS: ModelDef[] = [
+  { key: 'deepseek', label: 'DeepSeek', color: '#10b981', configKey: 'deepseek', icon: <ApiOutlined />, apiKeyUrl: 'https://platform.deepseek.com/api-keys', group: 'domestic' },
+  { key: 'moonshot', label: 'Moonshot (Kimi)', color: '#1677ff', configKey: 'moonshot', icon: <ApiOutlined />, apiKeyUrl: 'https://platform.moonshot.cn/console/api-keys', group: 'domestic' },
+  { key: 'qwen', label: '通义千问', color: '#ff6a00', configKey: 'qwen', icon: <ApiOutlined />, apiKeyUrl: 'https://dashscope.console.aliyun.com/apiKey', group: 'domestic' },
+  { key: 'zhipu', label: '智谱 GLM', color: '#0ea5e9', configKey: 'zhipu', icon: <ApiOutlined />, apiKeyUrl: 'https://bigmodel.cn/usercenter/apikeys', group: 'domestic' },
 ];
+
+// 国际模型
+const INTERNATIONAL_MODELS: ModelDef[] = [
+  { key: 'anthropic', label: 'Anthropic (Claude)', color: '#d97757', configKey: 'anthropic', icon: <ApiOutlined />, apiKeyUrl: 'https://console.anthropic.com/settings/api-keys', group: 'international' },
+  { key: 'openai', label: 'OpenAI (GPT)', color: '#10a37f', configKey: 'openai', icon: <ApiOutlined />, apiKeyUrl: 'https://platform.openai.com/api-keys', group: 'international' },
+  { key: 'gemini', label: 'Google Gemini', color: '#4285f4', configKey: 'google', icon: <ApiOutlined />, apiKeyUrl: 'https://aistudio.google.com/app/apikey', group: 'international' },
+  { key: 'github-copilot', label: 'GitHub Copilot', color: '#24292e', configKey: 'github-copilot:github', icon: <GithubOutlined />, group: 'international' },
+  { key: 'openrouter', label: 'OpenRouter', color: '#6366f1', configKey: 'openrouter', icon: <ApiOutlined />, apiKeyUrl: 'https://openrouter.ai/keys', group: 'international' },
+];
+
+const MODEL_DEFS: ModelDef[] = [...DOMESTIC_MODELS, ...INTERNATIONAL_MODELS];
 
 // 模型配置数据 (auth.profiles)
 interface ModelConfig {
@@ -55,7 +71,18 @@ interface ChannelDef {
   icon: React.ReactNode;
   color: string;
   fields: { name: string; label: string; required: boolean; secret?: boolean; placeholder?: string; tooltip?: string }[];
+  /** 教程锚点 ID */
+  docsAnchor?: string;
+  /** 教程描述 */
+  docsLabel?: string;
 }
+
+// 教程文档锚点 ID
+const DOCS_ANCHORS: Record<string, string> = {
+  dingtalk: '1-钉钉接入',
+  wecom: '3-企业微信接入',
+  feishu: '2-飞书接入',
+};
 
 const CHANNEL_DEFS: ChannelDef[] = [
   {
@@ -63,6 +90,8 @@ const CHANNEL_DEFS: ChannelDef[] = [
     label: '钉钉',
     icon: <DingtalkOutlined />,
     color: '#1677ff',
+    docsAnchor: 'dingtalk',
+    docsLabel: '钉钉应用配置教程',
     fields: [
       { name: 'clientId', label: 'Client ID', required: true, placeholder: 'dingxxxxxxxxx', tooltip: '钉钉开放平台应用的 Client ID' },
       { name: 'clientSecret', label: 'Client Secret', required: true, secret: true, tooltip: '钉钉开放平台应用的 Client Secret' },
@@ -73,6 +102,8 @@ const CHANNEL_DEFS: ChannelDef[] = [
     label: '企业微信',
     icon: <MessageOutlined />,
     color: '#07c160',
+    docsAnchor: 'wecom',
+    docsLabel: '企业微信应用配置教程',
     fields: [
       { name: 'corpId', label: '企业 ID', required: true, placeholder: 'ww12345678', tooltip: '在企业微信管理后台 - 我的企业 中查看' },
       { name: 'agentId', label: '应用 AgentId', required: true, placeholder: '1000002', tooltip: '在应用管理 - 自建应用详情页查看' },
@@ -86,6 +117,8 @@ const CHANNEL_DEFS: ChannelDef[] = [
     label: '飞书',
     icon: <MessageOutlined />,
     color: '#3370ff',
+    docsAnchor: 'feishu',
+    docsLabel: '飞书应用配置教程',
     fields: [
       { name: 'appId', label: '应用 App ID', required: true, placeholder: 'cli_xxxxxx', tooltip: '在飞书开放平台 - 应用详情页查看' },
       { name: 'appSecret', label: '应用 App Secret', required: true, secret: true },
@@ -124,7 +157,43 @@ export default function Settings() {
   const [modelModalVisible, setModelModalVisible] = useState(false);
   const [savingChannel, setSavingChannel] = useState(false);
   const [savingModel, setSavingModel] = useState(false);
+  // 教程抽屉状态
+  const [docsDrawerVisible, setDocsDrawerVisible] = useState(false);
+  const [docsContent, setDocsContent] = useState('');
+  const [docsLoading, setDocsLoading] = useState(false);
   const { gatewayPort, gatewayToken } = useAppStore();
+
+  // 加载教程文档
+  const loadDocsContent = async (anchor?: string) => {
+    setDocsLoading(true);
+    try {
+      const response = await fetch('/docs/channels-cn-setup.md');
+      if (response.ok) {
+        let content = await response.text();
+        // 如果有锚点，截取对应章节
+        if (anchor && DOCS_ANCHORS[anchor]) {
+          const anchorId = DOCS_ANCHORS[anchor];
+          const regex = new RegExp(`## ${anchorId.replace(/[-]/g, '[-]?')}[\\s\\S]*?(?=## \\d|---\n\n## |$)`);
+          const match = content.match(regex);
+          if (match) {
+            content = match[0];
+          }
+        }
+        setDocsContent(content);
+      }
+    } catch (error) {
+      console.error('Failed to load docs:', error);
+      setDocsContent('文档加载失败');
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  // 打开教程抽屉
+  const openDocsDrawer = (anchor?: string) => {
+    setDocsDrawerVisible(true);
+    loadDocsContent(anchor);
+  };
 
   // 加载当前配置
   useEffect(() => {
@@ -379,6 +448,12 @@ export default function Settings() {
   const configuredChannels = CHANNEL_DEFS.filter(def => isChannelConfigured(def.key));
   const unconfiguredChannels = CHANNEL_DEFS.filter(def => !isChannelConfigured(def.key));
 
+  // 按分组筛选未配置的模型
+  const unconfiguredDomestic = DOMESTIC_MODELS.filter(def => !isModelConfigured(def));
+  const unconfiguredInternational = INTERNATIONAL_MODELS.filter(def => !isModelConfigured(def));
+  const configuredDomestic = DOMESTIC_MODELS.filter(def => isModelConfigured(def));
+  const configuredInternational = INTERNATIONAL_MODELS.filter(def => isModelConfigured(def));
+
   return (
     <div style={{ height: '100%', background: '#f5f5f5', overflow: 'auto' }}>
       {/* 模型配置 */}
@@ -387,31 +462,68 @@ export default function Settings() {
           <span style={{ fontSize: 13, color: '#999' }}>模型配置</span>
           {unconfiguredModels.length > 0 && (
             <Select
-              placeholder="新增"
+              placeholder="新增模型"
               size="small"
-              style={{ width: 100 }}
+              style={{ width: 150 }}
               value={undefined}
               suffixIcon={<PlusOutlined style={{ fontSize: 10 }} />}
               onChange={(value) => {
                 const def = MODEL_DEFS.find(d => d.key === value);
                 if (def) openModelModal(def);
               }}
-              options={unconfiguredModels.map(def => ({ value: def.key, label: def.label }))}
+              options={[
+                {
+                  label: '🇨🇳 国产模型',
+                  options: unconfiguredDomestic.map(def => ({ value: def.key, label: def.label })),
+                },
+                {
+                  label: '🌍 国际模型',
+                  options: unconfiguredInternational.map(def => ({ value: def.key, label: def.label })),
+                },
+              ].filter(group => group.options.length > 0)}
             />
           )}
         </div>
         <div style={{ padding: '0 16px' }}>
           {configuredModels.length === 0 ? (
-            <div style={{ padding: '32px 0', textAlign: 'center', color: '#999', fontSize: 13 }}>
-              暂无已配置的模型
+            <div style={{ padding: '24px 0', textAlign: 'center', color: '#999', fontSize: 13 }}>
+              点击右上角新增模型
             </div>
           ) : (
-            configuredModels.map(def => renderListItem(
-              def.icon || <KeyOutlined />,
-              def.label,
-              '已配置',
-              () => openModelModal(def)
-            ))
+            <>
+              {/* 已配置的国产模型 */}
+              {configuredDomestic.length > 0 && (
+                <>
+                  <div style={{ fontSize: 12, color: '#999', padding: '12px 0 4px' }}>🇨🇳 国产</div>
+                  {configuredDomestic.map(def => (
+                    <div key={def.key}>
+                      {renderListItem(
+                        def.icon || <KeyOutlined />,
+                        def.label,
+                        '已配置',
+                        () => openModelModal(def)
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+              {/* 已配置的国际模型 */}
+              {configuredInternational.length > 0 && (
+                <>
+                  <div style={{ fontSize: 12, color: '#999', padding: '12px 0 4px' }}>🌍 国际</div>
+                  {configuredInternational.map(def => (
+                    <div key={def.key}>
+                      {renderListItem(
+                        def.icon || <KeyOutlined />,
+                        def.label,
+                        '已配置',
+                        () => openModelModal(def)
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -441,11 +553,15 @@ export default function Settings() {
               暂无已配置的渠道
             </div>
           ) : (
-            configuredChannels.map(def => renderListItem(
-              def.icon,
-              def.label,
-              getChannelSummary(def.key) || '已配置',
-              () => openChannelModal(def)
+            configuredChannels.map(def => (
+              <div key={def.key}>
+                {renderListItem(
+                  def.icon,
+                  def.label,
+                  getChannelSummary(def.key) || '已配置',
+                  () => openChannelModal(def)
+                )}
+              </div>
             ))
           )}
         </div>
@@ -497,11 +613,31 @@ export default function Settings() {
         confirmLoading={savingModel}
         okText="保存"
         cancelText="取消"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={modelForm} layout="vertical" style={{ marginTop: 16 }}>
+          {editingModel?.apiKeyUrl && (
+            <div style={{ marginBottom: 16 }}>
+              <Button 
+                type="link" 
+                icon={<LinkOutlined />}
+                onClick={() => window.open(editingModel.apiKeyUrl, '_blank')}
+                style={{ padding: 0 }}
+              >
+                获取 API Key →
+              </Button>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+                点击跳转到 {editingModel.label} 控制台获取 API Key
+              </Text>
+              {editingModel.group === 'international' && (
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8, color: '#faad14' }}>
+                  💡 提示：国际模型 API Key 也可以在闲鱼上搜索购买，更便宜哦~
+                </Text>
+              )}
+            </div>
+          )}
           <Form.Item name="apiKey" label="API Key" rules={[{ required: true, message: '请输入 API Key' }]}>
-            <Password placeholder="输入 API Key" style={{ height: 40 }} />
+            <Password placeholder="粘贴 API Key" style={{ height: 40 }} />
           </Form.Item>
         </Form>
       </Modal>
@@ -515,9 +651,24 @@ export default function Settings() {
         confirmLoading={savingChannel}
         okText="保存"
         cancelText="取消"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={channelForm} layout="vertical" style={{ marginTop: 16 }}>
+          {editingChannel?.docsAnchor && (
+            <div style={{ marginBottom: 16 }}>
+              <Button 
+                type="link" 
+                icon={<LinkOutlined />}
+                onClick={() => openDocsDrawer(editingChannel.docsAnchor)}
+                style={{ padding: 0 }}
+              >
+                {editingChannel.docsLabel || '查看配置教程'} →
+              </Button>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+                查看完整的 {editingChannel.label} 应用创建与配置步骤
+              </Text>
+            </div>
+          )}
           {editingChannel?.fields.map(field => (
             <Form.Item
               key={field.name}
@@ -535,6 +686,91 @@ export default function Settings() {
           ))}
         </Form>
       </Modal>
+
+      {/* 教程抽屉 */}
+      <Drawer
+        title="配置教程"
+        placement="right"
+        width={480}
+        open={docsDrawerVisible}
+        onClose={() => setDocsDrawerVisible(false)}
+      >
+        {docsLoading ? (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <Spin tip="加载中..." />
+          </div>
+        ) : (
+          <div style={{ lineHeight: 1.8 }}>
+            <ReactMarkdown
+              components={{
+                h2: ({ children }) => (
+                  <h2 style={{ fontSize: 18, fontWeight: 600, marginTop: 0, marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid #f0f0f0' }}>{children}</h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 style={{ fontSize: 15, fontWeight: 600, marginTop: 20, marginBottom: 8 }}>{children}</h3>
+                ),
+                p: ({ children }) => (
+                  <p style={{ marginBottom: 12, color: '#333' }}>{children}</p>
+                ),
+                ol: ({ children }) => (
+                  <ol style={{ marginBottom: 12, paddingLeft: 20 }}>{children}</ol>
+                ),
+                ul: ({ children }) => (
+                  <ul style={{ marginBottom: 12, paddingLeft: 20 }}>{children}</ul>
+                ),
+                li: ({ children }) => (
+                  <li style={{ marginBottom: 6 }}>{children}</li>
+                ),
+                code: ({ className, children }) => {
+                  const isBlock = className?.includes('language-');
+                  if (isBlock) {
+                    return (
+                      <pre style={{ 
+                        background: '#f6f8fa', 
+                        padding: 12, 
+                        borderRadius: 6, 
+                        overflow: 'auto',
+                        marginBottom: 12,
+                        fontSize: 12,
+                      }}>
+                        <code>{children}</code>
+                      </pre>
+                    );
+                  }
+                  return (
+                    <code style={{ 
+                      background: '#f6f8fa', 
+                      padding: '2px 6px', 
+                      borderRadius: 4,
+                      fontSize: 12,
+                      color: '#d63384',
+                    }}>{children}</code>
+                  );
+                },
+                blockquote: ({ children }) => (
+                  <blockquote style={{ 
+                    borderLeft: '3px solid #1677ff', 
+                    margin: '12px 0',
+                    padding: '8px 12px',
+                    background: '#f6f8fa',
+                    borderRadius: '0 4px 4px 0',
+                    color: '#666',
+                    fontSize: 13,
+                  }}>{children}</blockquote>
+                ),
+                a: ({ href, children }) => (
+                  <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#1677ff' }}>{children}</a>
+                ),
+                strong: ({ children }) => (
+                  <strong style={{ fontWeight: 600 }}>{children}</strong>
+                ),
+              }}
+            >
+              {docsContent}
+            </ReactMarkdown>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }

@@ -8,7 +8,8 @@ import {
   CHANNEL_MESSAGE_ACTION_NAMES,
   type ChannelMessageActionName,
 } from "../../channels/plugins/types.js";
-import { BLUEBUBBLES_GROUP_ACTIONS } from "../../channels/plugins/bluebubbles-actions.js";
+// OpenClaw CN: 移除 BlueBubbles actions
+const BLUEBUBBLES_GROUP_ACTIONS: string[] = [];
 import type { OpenClawConfig } from "../../config/config.js";
 import { loadConfig } from "../../config/config.js";
 import { GATEWAY_CLIENT_IDS, GATEWAY_CLIENT_MODES } from "../../gateway/protocol/client-info.js";
@@ -284,7 +285,8 @@ function filterActionsForContext(params: {
     lowered.startsWith("chat_identifier:") ||
     lowered.startsWith("group:");
   if (isGroupTarget) return params.actions;
-  return params.actions.filter((action) => !BLUEBUBBLES_GROUP_ACTIONS.has(action));
+  // OpenClaw CN: BlueBubbles not supported, return all actions
+  return params.actions.filter((action) => !BLUEBUBBLES_GROUP_ACTIONS.includes(action));
 }
 
 function buildMessageToolDescription(options?: {

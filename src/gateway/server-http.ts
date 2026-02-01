@@ -11,7 +11,7 @@ import { handleA2uiHttpRequest } from "../canvas-host/a2ui.js";
 import type { CanvasHostHandler } from "../canvas-host/server.js";
 import { loadConfig } from "../config/config.js";
 import type { createSubsystemLogger } from "../logging/subsystem.js";
-import { handleSlackHttpRequest } from "../slack/http/index.js";
+// OpenClaw CN: 移除 slack http import
 import {
   extractHookToken,
   getHookChannelError,
@@ -244,7 +244,7 @@ export function createGatewayHttpServer(opts: {
         })
       )
         return;
-      if (await handleSlackHttpRequest(req, res)) return;
+      // OpenClaw CN: 移除 slack http 处理
       if (handlePluginRequest && (await handlePluginRequest(req, res))) return;
       if (openResponsesEnabled) {
         if (

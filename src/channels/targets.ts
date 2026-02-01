@@ -1,4 +1,8 @@
-export type { DirectoryConfigParams } from "./plugins/directory-config.js";
+// OpenClaw CN: 移除 directory-config 引用
+export type DirectoryConfigParams = {
+  cfg: unknown;
+  accountId?: string;
+};
 export type { ChannelDirectoryEntry } from "./plugins/types.js";
 
 export type MessagingTargetKind = "user" | "channel";

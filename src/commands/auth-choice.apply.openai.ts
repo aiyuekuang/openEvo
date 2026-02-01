@@ -16,6 +16,8 @@ import {
   OPENAI_CODEX_DEFAULT_MODEL,
 } from "./openai-codex-model-default.js";
 
+const OPENAI_API_KEYS_URL = "https://platform.openai.com/api-keys";
+
 export async function applyAuthChoiceOpenAI(
   params: ApplyAuthChoiceParams,
 ): Promise<ApplyAuthChoiceResult | null> {
@@ -51,8 +53,18 @@ export async function applyAuthChoiceOpenAI(
     if (params.opts?.token && params.opts?.tokenProvider === "openai") {
       key = params.opts.token;
     } else {
+      // Auto-open browser to API keys page
+      await params.prompter.note(
+        [
+          "Opening OpenAI Platform to get your API key...",
+          `URL: ${OPENAI_API_KEYS_URL}`,
+        ].join("\n"),
+        "OpenAI API Key",
+      );
+      await openUrl(OPENAI_API_KEYS_URL);
+
       key = await params.prompter.text({
-        message: "Enter OpenAI API key",
+        message: "Paste your OpenAI API key",
         validate: validateApiKeyInput,
       });
     }

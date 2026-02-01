@@ -6,7 +6,7 @@ import {
 import { HEARTBEAT_TOKEN } from "../../auto-reply/tokens.js";
 import { getReplyFromConfig } from "../../auto-reply/reply.js";
 import type { ReplyPayload } from "../../auto-reply/types.js";
-import { resolveWhatsAppHeartbeatRecipients } from "../../channels/plugins/whatsapp-heartbeat.js";
+// OpenClaw CN: WhatsApp heartbeat removed (海外渠道专用)
 import { loadConfig } from "../../config/config.js";
 import {
   loadSessionStore,
@@ -323,9 +323,10 @@ export async function runWebHeartbeatOnce(opts: {
   }
 }
 
+// OpenClaw CN: WhatsApp heartbeat removed - return empty for CN version
 export function resolveHeartbeatRecipients(
-  cfg: ReturnType<typeof loadConfig>,
-  opts: { to?: string; all?: boolean } = {},
+  _cfg: ReturnType<typeof loadConfig>,
+  _opts: { to?: string; all?: boolean } = {},
 ) {
-  return resolveWhatsAppHeartbeatRecipients(cfg, opts);
+  return [];
 }

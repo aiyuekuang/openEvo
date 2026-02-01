@@ -310,17 +310,34 @@ let gatewayClient: GatewayClient | null = null;
 let lastPort: number | null = null;
 let lastToken: string | undefined = undefined;
 
+// 从 localStorage 读取持久化的 token
+function getPersistedToken(): string | null {
+  try {
+    const stored = localStorage.getItem('openclaw-cn-storage');
+    if (stored) {
+      const data = JSON.parse(stored);
+      return data?.state?.gatewayToken || null;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export function getGatewayClient(port = 18789, token?: string): GatewayClient {
+  // 优先级: 传入的 token > 上次使用的 token > localStorage 中的 token
+  const effectiveToken = token ?? lastToken ?? getPersistedToken();
+  
   // 如果端口或 token 变化，重建客户端
-  if (gatewayClient && (lastPort !== port || lastToken !== token)) {
+  if (gatewayClient && (lastPort !== port || lastToken !== effectiveToken)) {
     gatewayClient.disconnect();
     gatewayClient = null;
   }
   
   if (!gatewayClient) {
-    gatewayClient = new GatewayClient(`ws://127.0.0.1:${port}`, token);
+    gatewayClient = new GatewayClient(`ws://127.0.0.1:${port}`, effectiveToken);
     lastPort = port;
-    lastToken = token;
+    lastToken = effectiveToken;
   }
   return gatewayClient;
 }

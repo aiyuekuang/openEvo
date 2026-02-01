@@ -5,7 +5,7 @@
 
 import type { ChannelOutboundAdapter } from "../channels/plugins/types.js";
 import type { OpenClawConfig } from "../config/config.js";
-import { sendMessage } from "./api.js";
+import { sendMessage, sendWebhookMessage } from "./api.js";
 import type { WeComConfig } from "./types.js";
 
 export interface WeComChannelConfig {
@@ -66,6 +66,32 @@ async function sendWeComMessage(
 
   if (!cfg) {
     throw new Error("WeCom: 缺少配置");
+  }
+
+  // 检查是否是 Webhook 群机器人消息
+  // 格式: webhook:https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx
+  if (to.startsWith("webhook:") || to.startsWith("https://qyapi.weixin.qq.com/cgi-bin/webhook/")) {
+    const webhookUrl = to.startsWith("webhook:") ? to.substring(8) : to;
+    
+    // 检查是否包含 markdown 语法
+    const hasMarkdown = /[*_`#\[\]()]/.test(text);
+    let content = text;
+    if (mediaUrl) {
+      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(mediaUrl);
+      if (isImage) {
+        content = text ? `${text}\n\n![图片](${mediaUrl})` : `![图片](${mediaUrl})`;
+      } else {
+        content = text ? `${text}\n\n[文件](${mediaUrl})` : `[文件](${mediaUrl})`;
+      }
+    }
+    
+    const msgType = (hasMarkdown || mediaUrl) ? "markdown" : "text";
+    await sendWebhookMessage(webhookUrl, msgType, content);
+    
+    return {
+      messageId: `wecom_webhook_${Date.now()}`,
+      chatId: to,
+    };
   }
 
   const config = resolveWeComConfig(cfg, accountId);

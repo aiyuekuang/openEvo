@@ -17,6 +17,8 @@ export interface FeishuAccountConfig {
   verificationToken?: string;
   /** 事件订阅 Encrypt Key */
   encryptKey?: string;
+  /** 连接模式: webhook(默认) 或 websocket */
+  connectionMode?: "webhook" | "websocket";
   /** 允许的发送者列表 */
   allowFrom?: string[];
 }
@@ -27,6 +29,8 @@ export interface FeishuChannelConfig {
   appSecret?: string;
   verificationToken?: string;
   encryptKey?: string;
+  /** 连接模式: webhook(默认) 或 websocket */
+  connectionMode?: "webhook" | "websocket";
   allowFrom?: string[];
   /** 多账号配置 */
   accounts?: Record<string, FeishuAccountConfig>;
@@ -110,6 +114,7 @@ export const feishuPlugin: ChannelPlugin = {
         appSecret: { type: "string", description: "应用 App Secret" },
         verificationToken: { type: "string", description: "事件订阅 Verification Token" },
         encryptKey: { type: "string", description: "事件订阅 Encrypt Key" },
+        connectionMode: { type: "string", enum: ["webhook", "websocket"], description: "连接模式: webhook(默认) 或 websocket" },
         allowFrom: { type: "array", items: { type: "string" }, description: "允许的发送者列表" },
         accounts: {
           type: "object",
@@ -121,6 +126,7 @@ export const feishuPlugin: ChannelPlugin = {
               appSecret: { type: "string" },
               verificationToken: { type: "string" },
               encryptKey: { type: "string" },
+              connectionMode: { type: "string", enum: ["webhook", "websocket"] },
               allowFrom: { type: "array", items: { type: "string" } },
             },
             required: ["appId", "appSecret"],
@@ -133,6 +139,7 @@ export const feishuPlugin: ChannelPlugin = {
       appSecret: { label: "应用 App Secret", sensitive: true },
       verificationToken: { label: "Verification Token", advanced: true },
       encryptKey: { label: "Encrypt Key", advanced: true, sensitive: true },
+      connectionMode: { label: "连接模式", help: "websocket 模式无需公网暴露" },
       allowFrom: { label: "允许的发送者", advanced: true },
       accounts: { label: "多账号配置", advanced: true },
     },

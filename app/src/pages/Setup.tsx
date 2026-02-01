@@ -6,42 +6,62 @@ import {
   RocketOutlined,
   CheckCircleOutlined,
   DingdingOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 import { useAppStore, ModelProvider, ChannelType } from '../stores/app';
 import { getGatewayClient } from '../api/gateway';
 
 const { Title, Text, Paragraph } = Typography;
 
-const MODEL_PROVIDERS: { value: ModelProvider; label: string; icon: string; fields: string[] }[] = [
-  { 
-    value: 'openai', 
-    label: 'OpenAI (GPT-4)', 
-    icon: '🤖',
-    fields: ['apiKey', 'baseUrl']
-  },
+const MODEL_PROVIDERS: { value: ModelProvider; label: string; icon: string; fields: string[]; apiKeyUrl?: string }[] = [
   { 
     value: 'anthropic', 
     label: 'Anthropic (Claude)', 
     icon: '🧠',
-    fields: ['apiKey']
+    fields: ['apiKey'],
+    apiKeyUrl: 'https://console.anthropic.com/settings/api-keys'
+  },
+  { 
+    value: 'openai', 
+    label: 'OpenAI (GPT-4)', 
+    icon: '🤖',
+    fields: ['apiKey', 'baseUrl'],
+    apiKeyUrl: 'https://platform.openai.com/api-keys'
   },
   { 
     value: 'deepseek', 
     label: 'DeepSeek', 
     icon: '🔍',
-    fields: ['apiKey']
+    fields: ['apiKey'],
+    apiKeyUrl: 'https://platform.deepseek.com/api-keys'
   },
   { 
     value: 'qwen', 
     label: '通义千问', 
     icon: '☁️',
-    fields: ['apiKey']
+    fields: ['apiKey'],
+    apiKeyUrl: 'https://dashscope.console.aliyun.com/apiKey'
   },
   { 
     value: 'zhipu', 
     label: '智谱 GLM', 
     icon: '💡',
-    fields: ['apiKey']
+    fields: ['apiKey'],
+    apiKeyUrl: 'https://bigmodel.cn/usercenter/apikeys'
+  },
+  { 
+    value: 'moonshot' as ModelProvider, 
+    label: 'Moonshot (Kimi)', 
+    icon: '🌙',
+    fields: ['apiKey'],
+    apiKeyUrl: 'https://platform.moonshot.cn/console/api-keys'
+  },
+  { 
+    value: 'gemini' as ModelProvider, 
+    label: 'Google Gemini', 
+    icon: '✨',
+    fields: ['apiKey'],
+    apiKeyUrl: 'https://aistudio.google.com/app/apikey'
   },
 ];
 
@@ -302,17 +322,32 @@ export default function Setup() {
               ))}
             </Row>
 
-            {selectedProvider && (
+            {selectedProvider && selectedProviderInfo && (
               <Form form={modelForm} layout="vertical">
+                {selectedProviderInfo.apiKeyUrl && (
+                  <div style={{ marginBottom: 16 }}>
+                    <Button 
+                      type="link" 
+                      icon={<LinkOutlined />}
+                      onClick={() => window.open(selectedProviderInfo.apiKeyUrl, '_blank')}
+                      style={{ padding: 0, height: 'auto' }}
+                    >
+                      获取 {selectedProviderInfo.label} API Key →
+                    </Button>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+                      点击跳转到控制台获取 API Key，然后粘贴到下方
+                    </Text>
+                  </div>
+                )}
                 <Form.Item
                   name="apiKey"
                   label="API Key"
                   rules={[{ required: true, message: '请输入 API Key' }]}
                 >
-                  <Input.Password placeholder={`输入 ${selectedProviderInfo?.label} 的 API Key`} />
+                  <Input.Password placeholder={`粘贴 ${selectedProviderInfo.label} 的 API Key`} />
                 </Form.Item>
                 
-                {selectedProviderInfo?.fields.includes('baseUrl') && (
+                {selectedProviderInfo.fields.includes('baseUrl') && (
                   <Form.Item
                     name="baseUrl"
                     label="API Base URL (可选)"

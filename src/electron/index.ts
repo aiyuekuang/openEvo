@@ -2,6 +2,7 @@ import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { GatewayManager } from './gateway.js';
+import { registerSkillIpcHandlers } from './skill-ipc.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -104,6 +105,13 @@ function setupIPC() {
   ipcMain.handle('gateway:getPort', async () => {
     return gatewayManager?.getPort();
   });
+
+  ipcMain.handle('gateway:getToken', async () => {
+    return gatewayManager?.getToken();
+  });
+
+  // 注册技能市场 IPC handlers
+  registerSkillIpcHandlers(ipcMain);
 }
 
 app.whenReady().then(async () => {

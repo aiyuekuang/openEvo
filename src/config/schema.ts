@@ -183,8 +183,7 @@ const FIELD_LABELS: Record<string, string> = {
   "gateway.remote.token": "Remote Gateway Token",
   "gateway.remote.password": "Remote Gateway Password",
   "gateway.remote.tlsFingerprint": "Remote Gateway TLS Fingerprint",
-  "gateway.auth.token": "Gateway Token",
-  "gateway.auth.password": "Gateway Password",
+  // Note: gateway.auth.token/password defined above in Core section
   "tools.media.image.enabled": "Enable Image Understanding",
   "tools.media.image.maxBytes": "Image Understanding Max Bytes",
   "tools.media.image.maxChars": "Image Understanding Max Chars",
@@ -252,7 +251,7 @@ const FIELD_LABELS: Record<string, string> = {
   "tools.web.fetch.cacheTtlMinutes": "Web Fetch Cache TTL (min)",
   "tools.web.fetch.maxRedirects": "Web Fetch Max Redirects",
   "tools.web.fetch.userAgent": "Web Fetch User-Agent",
-  "gateway.controlUi.basePath": "Control UI Base Path",
+  // Note: gateway.controlUi.basePath defined above in Core section
   "gateway.controlUi.allowInsecureAuth": "Allow Insecure Control UI Auth",
   "gateway.controlUi.dangerouslyDisableDeviceAuth": "Dangerously Disable Control UI Device Auth",
   "gateway.http.endpoints.chatCompletions.enabled": "OpenAI Chat Completions Endpoint",
@@ -266,7 +265,7 @@ const FIELD_LABELS: Record<string, string> = {
   "nodeHost.browserProxy.allowProfiles": "Node Browser Proxy Allowed Profiles",
   "skills.load.watch": "Watch Skills",
   "skills.load.watchDebounceMs": "Skills Watch Debounce (ms)",
-  "agents.defaults.workspace": "Workspace",
+  // Note: agents.defaults.workspace defined above in Core section
   "agents.defaults.repoRoot": "Repo Root",
   "agents.defaults.bootstrapMaxChars": "Bootstrap Max Chars",
   "agents.defaults.envelopeTimezone": "Envelope Timezone",
@@ -306,15 +305,12 @@ const FIELD_LABELS: Record<string, string> = {
     "Memory Search Hybrid Candidate Multiplier",
   "agents.defaults.memorySearch.cache.enabled": "Memory Search Embedding Cache",
   "agents.defaults.memorySearch.cache.maxEntries": "Memory Search Embedding Cache Max Entries",
-  "auth.profiles": "Auth Profiles",
-  "auth.order": "Auth Profile Order",
-  "auth.cooldowns.billingBackoffHours": "Billing Backoff (hours)",
+  // Note: auth.profiles, auth.order, auth.cooldowns defined above in Core section
   "auth.cooldowns.billingBackoffHoursByProvider": "Billing Backoff Overrides",
   "auth.cooldowns.billingMaxHours": "Billing Backoff Cap (hours)",
   "auth.cooldowns.failureWindowHours": "Failover Window (hours)",
   "agents.defaults.models": "Models",
-  "agents.defaults.model.primary": "Primary Model",
-  "agents.defaults.model.fallbacks": "Model Fallbacks",
+  // Note: agents.defaults.model.primary/fallbacks defined above in Core section
   "agents.defaults.imageModel.primary": "Image Model",
   "agents.defaults.imageModel.fallbacks": "Image Model Fallbacks",
   "agents.defaults.humanDelay.mode": "Human Delay Mode",
@@ -330,9 +326,7 @@ const FIELD_LABELS: Record<string, string> = {
   "commands.debug": "Allow /debug",
   "commands.restart": "Allow Restart",
   "commands.useAccessGroups": "Use Access Groups",
-  "ui.seamColor": "Accent Color",
-  "ui.assistant.name": "Assistant Name",
-  "ui.assistant.avatar": "Assistant Avatar",
+  // Note: ui.seamColor, ui.assistant.name/avatar defined above in Core section
   "browser.evaluateEnabled": "Browser Evaluate Enabled",
   "browser.snapshotDefaults": "Browser Snapshot Defaults",
   "browser.snapshotDefaults.mode": "Browser Snapshot Mode",

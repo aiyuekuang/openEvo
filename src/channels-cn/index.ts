@@ -6,6 +6,36 @@
  * - 企业微信 (WeCom)
  * - 钉钉 (DingTalk)
  * - 飞书 (Feishu/Lark)
+ *
+ * 配置示例 (CLI):
+ *
+ * # 钉钉配置 (最容易配置)
+ * openclaw config set channels.dingtalk '{
+ *   "enabled": true,
+ *   "appKey": "dingxxxxxx",
+ *   "appSecret": "your-app-secret",
+ *   "enableAICard": true
+ * }' --json
+ *
+ * # 飞书配置 (WebSocket 模式，无需公网)
+ * openclaw config set channels.feishu '{
+ *   "enabled": true,
+ *   "appId": "cli_xxxxxx",
+ *   "appSecret": "your-app-secret",
+ *   "connectionMode": "websocket"
+ * }' --json
+ *
+ * # 企业微信配置
+ * openclaw config set channels.wecom '{
+ *   "enabled": true,
+ *   "corpId": "ww12345678",
+ *   "agentId": 1000002,
+ *   "secret": "your-agent-secret",
+ *   "token": "callback-token",
+ *   "encodingAesKey": "callback-aes-key"
+ * }' --json
+ *
+ * 更多配置选项请查看 ~/.openclaw/openclaw.json
  */
 
 import type { OpenClawPluginApi } from "../plugins/types.js";
