@@ -1,11 +1,11 @@
 {
   "name": "web",
-  "displayName": "网络访问",
-  "description": "搜索和获取网页内容",
+  "displayName": "网络搜索",
+  "description": "搜索网页 (web_search) 和获取指定 URL 内容 (web_fetch)。可联网查询实时信息。",
   "version": "1.0.0",
   "emoji": "🔍",
   "category": "tool",
-  "tags": ["搜索", "search", "web", "网页", "fetch"],
+  "tags": ["搜索", "search", "web", "网页", "fetch", "联网"],
   "builtin": true,
   "tools": ["web_search", "web_fetch"],
   "platforms": ["darwin", "linux", "win32"]

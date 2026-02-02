@@ -1,11 +1,11 @@
 {
   "name": "nodes-screen",
   "displayName": "屏幕录制",
-  "description": "录制屏幕视频",
+  "description": "录制当前屏幕画面，生成视频文件。支持指定时长和帧率。",
   "version": "1.0.0",
   "emoji": "🖥️",
   "category": "tool",
-  "tags": ["屏幕", "screen", "录制", "record"],
+  "tags": ["屏幕", "screen", "录制", "record", "视频", "截屏"],
   "builtin": true,
   "tools": ["nodes:screen_record"],
   "platforms": ["darwin", "linux", "win32"]

@@ -1,11 +1,11 @@
 {
   "name": "browser",
-  "displayName": "浏览器控制",
-  "description": "控制浏览器进行网页操作、截图、表单填写",
+  "displayName": "浏览器自动化",
+  "description": "自动控制 Chrome/Edge 浏览器：打开网页、点击、填表、截图、提取内容。",
   "version": "1.0.0",
   "emoji": "🌐",
   "category": "tool",
-  "tags": ["浏览器", "browser", "web", "网页"],
+  "tags": ["浏览器", "browser", "web", "网页", "自动化", "爬虫"],
   "builtin": true,
   "tools": ["browser"],
   "platforms": ["darwin", "linux", "win32"]

@@ -1,11 +1,11 @@
 {
   "name": "nodes-notify",
   "displayName": "系统通知",
-  "description": "发送系统通知到设备",
+  "description": "发送桌面/手机系统通知，支持标题、内容、声音。可用于任务完成提醒。",
   "version": "1.0.0",
   "emoji": "🔔",
   "category": "tool",
-  "tags": ["通知", "notify", "notification"],
+  "tags": ["通知", "notify", "notification", "提醒", "alert"],
   "builtin": true,
   "tools": ["nodes:notify"],
   "platforms": ["darwin", "linux", "win32"]

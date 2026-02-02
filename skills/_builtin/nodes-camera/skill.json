@@ -1,11 +1,11 @@
 {
   "name": "nodes-camera",
-  "displayName": "摄像头拍照",
-  "description": "使用设备摄像头拍照，macOS 自动回退到 imagesnap",
+  "displayName": "本地摄像头",
+  "description": "使用电脑/手机自带摄像头拍照或录制短视频。macOS 无需配置，自动使用 imagesnap。",
   "version": "1.0.0",
   "emoji": "📷",
   "category": "tool",
-  "tags": ["摄像头", "camera", "拍照", "photo"],
+  "tags": ["摄像头", "camera", "拍照", "photo", "MacBook", "本地"],
   "builtin": true,
   "tools": ["nodes:camera_snap", "nodes:camera_list", "nodes:camera_clip"],
   "platforms": ["darwin", "linux", "win32"]
