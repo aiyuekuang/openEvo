@@ -1,4 +1,7 @@
 import { Type } from "@sinclair/typebox";
+import type { OpenClawConfig } from "../../config/config.js";
+import type { AnyAgentTool } from "./common.js";
+import { BLUEBUBBLES_GROUP_ACTIONS } from "../../channels/plugins/bluebubbles-actions.js";
 import {
   listChannelMessageActions,
   supportsChannelMessageButtons,
@@ -8,19 +11,16 @@ import {
   CHANNEL_MESSAGE_ACTION_NAMES,
   type ChannelMessageActionName,
 } from "../../channels/plugins/types.js";
-// OpenClaw CN: 移除 BlueBubbles actions
-const BLUEBUBBLES_GROUP_ACTIONS: string[] = [];
-import type { OpenClawConfig } from "../../config/config.js";
 import { loadConfig } from "../../config/config.js";
 import { GATEWAY_CLIENT_IDS, GATEWAY_CLIENT_MODES } from "../../gateway/protocol/client-info.js";
-import { normalizeTargetForProvider } from "../../infra/outbound/target-normalization.js";
 import { getToolResult, runMessageAction } from "../../infra/outbound/message-action-runner.js";
-import { resolveSessionAgentId } from "../agent-scope.js";
+import { normalizeTargetForProvider } from "../../infra/outbound/target-normalization.js";
 import { normalizeAccountId } from "../../routing/session-key.js";
-import { channelTargetSchema, channelTargetsSchema, stringEnum } from "../schema/typebox.js";
-import { listChannelSupportedActions } from "../channel-tools.js";
 import { normalizeMessageChannel } from "../../utils/message-channel.js";
-import type { AnyAgentTool } from "./common.js";
+import { resolveSessionAgentId } from "../agent-scope.js";
+import { listChannelSupportedActions } from "../channel-tools.js";
+import { assertSandboxPath } from "../sandbox-paths.js";
+import { channelTargetSchema, channelTargetsSchema, stringEnum } from "../schema/typebox.js";
 import { jsonResult, readNumberParam, readStringParam } from "./common.js";
 
 const AllMessageActions = CHANNEL_MESSAGE_ACTION_NAMES;
@@ -89,8 +89,12 @@ function buildSendSchema(options: { includeButtons: boolean; includeCards: boole
       ),
     ),
   };
-  if (!options.includeButtons) delete props.buttons;
-  if (!options.includeCards) delete props.card;
+  if (!options.includeButtons) {
+    delete props.buttons;
+  }
+  if (!options.includeCards) {
+    delete props.card;
+  }
   return props;
 }
 
@@ -249,6 +253,7 @@ type MessageToolOptions = {
   currentThreadTs?: string;
   replyToMode?: "off" | "first" | "all";
   hasRepliedRef?: { value: boolean };
+  sandboxRoot?: string;
 };
 
 function buildMessageToolSchema(cfg: OpenClawConfig) {
@@ -263,7 +268,9 @@ function buildMessageToolSchema(cfg: OpenClawConfig) {
 
 function resolveAgentAccountId(value?: string): string | undefined {
   const trimmed = value?.trim();
-  if (!trimmed) return undefined;
+  if (!trimmed) {
+    return undefined;
+  }
   return normalizeAccountId(trimmed);
 }
 
@@ -273,9 +280,13 @@ function filterActionsForContext(params: {
   currentChannelId?: string;
 }): ChannelMessageActionName[] {
   const channel = normalizeMessageChannel(params.channel);
-  if (!channel || channel !== "bluebubbles") return params.actions;
+  if (!channel || channel !== "bluebubbles") {
+    return params.actions;
+  }
   const currentChannelId = params.currentChannelId?.trim();
-  if (!currentChannelId) return params.actions;
+  if (!currentChannelId) {
+    return params.actions;
+  }
   const normalizedTarget =
     normalizeTargetForProvider(channel, currentChannelId) ?? currentChannelId;
   const lowered = normalizedTarget.trim().toLowerCase();
@@ -284,9 +295,10 @@ function filterActionsForContext(params: {
     lowered.startsWith("chat_id:") ||
     lowered.startsWith("chat_identifier:") ||
     lowered.startsWith("group:");
-  if (isGroupTarget) return params.actions;
-  // OpenClaw CN: BlueBubbles not supported, return all actions
-  return params.actions.filter((action) => !BLUEBUBBLES_GROUP_ACTIONS.includes(action));
+  if (isGroupTarget) {
+    return params.actions;
+  }
+  return params.actions.filter((action) => !BLUEBUBBLES_GROUP_ACTIONS.has(action));
 }
 
 function buildMessageToolDescription(options?: {
@@ -309,7 +321,7 @@ function buildMessageToolDescription(options?: {
     if (channelActions.length > 0) {
       // Always include "send" as a base action
       const allActions = new Set(["send", ...channelActions]);
-      const actionList = Array.from(allActions).sort().join(", ");
+      const actionList = Array.from(allActions).toSorted().join(", ");
       return `${baseDescription} Current channel (${options.currentChannel}) supports: ${actionList}.`;
     }
   }
@@ -351,6 +363,17 @@ export function createMessageTool(options?: MessageToolOptions): AnyAgentTool {
       const action = readStringParam(params, "action", {
         required: true,
       }) as ChannelMessageActionName;
+
+      // Validate file paths against sandbox root to prevent host file access.
+      const sandboxRoot = options?.sandboxRoot;
+      if (sandboxRoot) {
+        for (const key of ["filePath", "path"] as const) {
+          const raw = readStringParam(params, key, { trim: false });
+          if (raw) {
+            await assertSandboxPath({ filePath: raw, cwd: sandboxRoot, root: sandboxRoot });
+          }
+        }
+      }
 
       const accountId = readStringParam(params, "accountId") ?? agentAccountId;
       if (accountId) {
@@ -398,7 +421,9 @@ export function createMessageTool(options?: MessageToolOptions): AnyAgentTool {
       });
 
       const toolResult = getToolResult(result);
-      if (toolResult) return toolResult;
+      if (toolResult) {
+        return toolResult;
+      }
       return jsonResult(result.payload);
     },
   };

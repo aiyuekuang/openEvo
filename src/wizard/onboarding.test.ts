@@ -2,11 +2,10 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-
-import { DEFAULT_BOOTSTRAP_FILENAME } from "../agents/workspace.js";
 import type { RuntimeEnv } from "../runtime.js";
-import { runOnboardingWizard } from "./onboarding.js";
 import type { WizardPrompter } from "./prompts.js";
+import { DEFAULT_BOOTSTRAP_FILENAME } from "../agents/workspace.js";
+import { runOnboardingWizard } from "./onboarding.js";
 
 const setupChannels = vi.hoisted(() => vi.fn(async (cfg) => cfg));
 const setupSkills = vi.hoisted(() => vi.fn(async (cfg) => cfg));
@@ -18,6 +17,7 @@ const readConfigFileSnapshot = vi.hoisted(() =>
 );
 const ensureSystemdUserLingerInteractive = vi.hoisted(() => vi.fn(async () => {}));
 const isSystemdUserServiceAvailable = vi.hoisted(() => vi.fn(async () => true));
+const ensureControlUiAssetsBuilt = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
 const runTui = vi.hoisted(() => vi.fn(async () => {}));
 
 vi.mock("../commands/onboard-channels.js", () => ({
@@ -65,6 +65,9 @@ vi.mock("../daemon/systemd.js", () => ({
   isSystemdUserServiceAvailable,
 }));
 
+vi.mock("../infra/control-ui-assets.js", () => ({
+  ensureControlUiAssetsBuilt,
+}));
 
 vi.mock("../tui/tui.js", () => ({
   runTui,
@@ -174,7 +177,9 @@ describe("runOnboardingWizard", () => {
     await fs.writeFile(path.join(workspaceDir, DEFAULT_BOOTSTRAP_FILENAME), "{}");
 
     const select: WizardPrompter["select"] = vi.fn(async (opts) => {
-      if (opts.message === "How do you want to hatch your bot?") return "tui";
+      if (opts.message === "How do you want to hatch your bot?") {
+        return "tui";
+      }
       return "quickstart";
     });
 
@@ -229,7 +234,9 @@ describe("runOnboardingWizard", () => {
     const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-onboard-"));
 
     const select: WizardPrompter["select"] = vi.fn(async (opts) => {
-      if (opts.message === "How do you want to hatch your bot?") return "tui";
+      if (opts.message === "How do you want to hatch your bot?") {
+        return "tui";
+      }
       return "quickstart";
     });
 

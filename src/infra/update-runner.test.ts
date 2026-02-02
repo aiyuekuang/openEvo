@@ -2,7 +2,6 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { runGatewayUpdate } from "./update-runner.js";
 
 type CommandResult = { stdout?: string; stderr?: string; code?: number };
@@ -44,7 +43,7 @@ describe("runGatewayUpdate", () => {
       [`git -C ${tempDir} rev-parse --show-toplevel`]: { stdout: tempDir },
       [`git -C ${tempDir} rev-parse HEAD`]: { stdout: "abc123" },
       [`git -C ${tempDir} rev-parse --abbrev-ref HEAD`]: { stdout: "main" },
-      [`git -C ${tempDir} status --porcelain`]: { stdout: " M README.md" },
+      [`git -C ${tempDir} status --porcelain -- :!dist/control-ui/`]: { stdout: " M README.md" },
     });
 
     const result = await runGatewayUpdate({
@@ -69,7 +68,7 @@ describe("runGatewayUpdate", () => {
       [`git -C ${tempDir} rev-parse --show-toplevel`]: { stdout: tempDir },
       [`git -C ${tempDir} rev-parse HEAD`]: { stdout: "abc123" },
       [`git -C ${tempDir} rev-parse --abbrev-ref HEAD`]: { stdout: "main" },
-      [`git -C ${tempDir} status --porcelain`]: { stdout: "" },
+      [`git -C ${tempDir} status --porcelain -- :!dist/control-ui/`]: { stdout: "" },
       [`git -C ${tempDir} rev-parse --abbrev-ref --symbolic-full-name @{upstream}`]: {
         stdout: "origin/main",
       },
@@ -103,7 +102,7 @@ describe("runGatewayUpdate", () => {
     const { runner, calls } = createRunner({
       [`git -C ${tempDir} rev-parse --show-toplevel`]: { stdout: tempDir },
       [`git -C ${tempDir} rev-parse HEAD`]: { stdout: "abc123" },
-      [`git -C ${tempDir} status --porcelain`]: { stdout: "" },
+      [`git -C ${tempDir} status --porcelain -- :!dist/control-ui/`]: { stdout: "" },
       [`git -C ${tempDir} fetch --all --prune --tags`]: { stdout: "" },
       [`git -C ${tempDir} tag --list v* --sort=-v:refname`]: {
         stdout: `${stableTag}\n${betaTag}\n`,
@@ -111,6 +110,8 @@ describe("runGatewayUpdate", () => {
       [`git -C ${tempDir} checkout --detach ${stableTag}`]: { stdout: "" },
       "pnpm install": { stdout: "" },
       "pnpm build": { stdout: "" },
+      "pnpm ui:build": { stdout: "" },
+      [`git -C ${tempDir} checkout -- dist/control-ui/`]: { stdout: "" },
       "pnpm openclaw doctor --non-interactive": { stdout: "" },
     });
 
@@ -297,8 +298,11 @@ describe("runGatewayUpdate", () => {
       expect(result.after?.version).toBe("2.0.0");
       expect(calls.some((call) => call === "bun add -g openclaw@latest")).toBe(true);
     } finally {
-      if (oldBunInstall === undefined) delete process.env.BUN_INSTALL;
-      else process.env.BUN_INSTALL = oldBunInstall;
+      if (oldBunInstall === undefined) {
+        delete process.env.BUN_INSTALL;
+      } else {
+        process.env.BUN_INSTALL = oldBunInstall;
+      }
     }
   });
 

@@ -1,13 +1,7 @@
-import { execFile } from "node:child_process";
-import crypto from "node:crypto";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { promisify } from "node:util";
-
 import type { AgentToolResult } from "@mariozechner/pi-agent-core";
 import { Type } from "@sinclair/typebox";
-
+import crypto from "node:crypto";
+import type { OpenClawConfig } from "../../config/config.js";
 import {
   type CameraFacing,
   cameraTempPath,
@@ -22,7 +16,6 @@ import {
   writeScreenRecordToFile,
 } from "../../cli/nodes-screen.js";
 import { parseDurationMs } from "../../cli/parse-duration.js";
-import type { OpenClawConfig } from "../../config/config.js";
 import { imageMimeFromFormat } from "../../media/mime.js";
 import { resolveSessionAgentId } from "../agent-scope.js";
 import { optionalStringEnum, stringEnum } from "../schema/typebox.js";
@@ -30,77 +23,6 @@ import { sanitizeToolResultImages } from "../tool-images.js";
 import { type AnyAgentTool, jsonResult, readStringParam } from "./common.js";
 import { callGatewayTool, type GatewayCallOptions } from "./gateway.js";
 import { listNodes, resolveNodeIdFromList, resolveNodeId } from "./nodes-utils.js";
-
-const execFileAsync = promisify(execFile);
-
-/**
- * Try to capture photo using local imagesnap (macOS only).
- * Returns null if imagesnap is not available or not on macOS.
- */
-async function tryLocalImagesnap(params: {
-  deviceId?: string;
-  delayMs?: number;
-}): Promise<{ base64: string; format: string; width?: number; height?: number } | null> {
-  // Only works on macOS
-  if (process.platform !== "darwin") return null;
-
-  // Check if imagesnap is available
-  try {
-    await execFileAsync("which", ["imagesnap"]);
-  } catch {
-    return null;
-  }
-
-  const tempDir = os.tmpdir();
-  const timestamp = Date.now();
-  const outPath = path.join(tempDir, `openclaw-snap-${timestamp}.jpg`);
-
-  const args: string[] = [];
-  if (params.deviceId) {
-    args.push("-d", params.deviceId);
-  }
-  // Add warmup time for camera auto-exposure
-  const warmupSeconds = params.delayMs ? Math.max(1, params.delayMs / 1000) : 1;
-  args.push("-w", String(warmupSeconds));
-  args.push(outPath);
-
-  try {
-    await execFileAsync("imagesnap", args, { timeout: 30000 });
-    const imageData = fs.readFileSync(outPath);
-    const base64 = imageData.toString("base64");
-    // Clean up temp file
-    fs.unlinkSync(outPath);
-    return { base64, format: "jpg" };
-  } catch (error) {
-    // Clean up on error
-    try {
-      fs.unlinkSync(outPath);
-    } catch {
-      // ignore
-    }
-    return null;
-  }
-}
-
-/**
- * List local cameras using imagesnap -l (macOS only).
- */
-async function tryLocalCameraList(): Promise<{ devices: string[] } | null> {
-  if (process.platform !== "darwin") return null;
-
-  try {
-    const { stdout } = await execFileAsync("imagesnap", ["-l"], { timeout: 5000 });
-    const lines = stdout.split("\n").filter((line) => line.startsWith("<"));
-    const devices = lines.map((line) => {
-      // Parse "<device_id>" or "<=> device_name"
-      const match = line.match(/^<(.+)>$/) || line.match(/^<=?>\s*(.+)$/);
-      return match ? match[1].trim() : line.trim();
-    });
-    return { devices };
-  } catch {
-    return null;
-  }
-}
 
 const NODES_TOOL_ACTIONS = [
   "status",
@@ -242,53 +164,8 @@ export function createNodesTool(options?: {
             return jsonResult({ ok: true });
           }
           case "camera_snap": {
-            const node = readStringParam(params, "node", { required: false });
-            let nodeId: string | null = null;
-            try {
-              nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
-            } catch {
-              // No node available, will try local imagesnap
-            }
-
-            // If no node, try local imagesnap fallback (macOS only)
-            if (!nodeId) {
-              const deviceId =
-                typeof params.deviceId === "string" && params.deviceId.trim()
-                  ? params.deviceId.trim()
-                  : undefined;
-              const delayMs =
-                typeof params.delayMs === "number" && Number.isFinite(params.delayMs)
-                  ? params.delayMs
-                  : undefined;
-
-              const localResult = await tryLocalImagesnap({ deviceId, delayMs });
-              if (localResult) {
-                const isJpeg = localResult.format === "jpg" || localResult.format === "jpeg";
-                const filePath = cameraTempPath({
-                  kind: "snap",
-                  facing: "front",
-                  ext: isJpeg ? "jpg" : "png",
-                });
-                await writeBase64ToFile(filePath, localResult.base64);
-                const content: AgentToolResult<unknown>["content"] = [
-                  { type: "text", text: `MEDIA:${filePath}` },
-                  {
-                    type: "image",
-                    data: localResult.base64,
-                    mimeType: isJpeg ? "image/jpeg" : "image/png",
-                  },
-                ];
-                const details = [{
-                  facing: "local",
-                  path: filePath,
-                  source: "imagesnap",
-                }];
-                const result: AgentToolResult<unknown> = { content, details };
-                return await sanitizeToolResultImages(result, "nodes:camera_snap:local");
-              }
-              throw new Error("node required (no paired node and local imagesnap not available)");
-            }
-
+            const node = readStringParam(params, "node", { required: true });
+            const nodeId = await resolveNodeId(gatewayOpts, node);
             const facingRaw =
               typeof params.facing === "string" ? params.facing.toLowerCase() : "both";
             const facings: CameraFacing[] =
@@ -320,7 +197,7 @@ export function createNodesTool(options?: {
             const details: Array<Record<string, unknown>> = [];
 
             for (const facing of facings) {
-              const raw = (await callGatewayTool("node.invoke", gatewayOpts, {
+              const raw = await callGatewayTool<{ payload: unknown }>("node.invoke", gatewayOpts, {
                 nodeId,
                 command: "camera.snap",
                 params: {
@@ -332,7 +209,7 @@ export function createNodesTool(options?: {
                   deviceId,
                 },
                 idempotencyKey: crypto.randomUUID(),
-              })) as { payload?: unknown };
+              });
               const payload = parseCameraSnapPayload(raw?.payload);
               const normalizedFormat = payload.format.toLowerCase();
               if (
@@ -369,36 +246,21 @@ export function createNodesTool(options?: {
             return await sanitizeToolResultImages(result, "nodes:camera_snap");
           }
           case "camera_list": {
-            const node = readStringParam(params, "node", { required: false });
-            let nodeId: string | null = null;
-            try {
-              nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
-            } catch {
-              // No node available, will try local imagesnap
-            }
-
-            // If no node, try local imagesnap -l fallback (macOS only)
-            if (!nodeId) {
-              const localResult = await tryLocalCameraList();
-              if (localResult) {
-                return jsonResult({ devices: localResult.devices, source: "imagesnap" });
-              }
-              throw new Error("node required (no paired node and local imagesnap not available)");
-            }
-
-            const raw = (await callGatewayTool("node.invoke", gatewayOpts, {
+            const node = readStringParam(params, "node", { required: true });
+            const nodeId = await resolveNodeId(gatewayOpts, node);
+            const raw = await callGatewayTool<{ payload: unknown }>("node.invoke", gatewayOpts, {
               nodeId,
               command: "camera.list",
               params: {},
               idempotencyKey: crypto.randomUUID(),
-            })) as { payload?: unknown };
+            });
             const payload =
               raw && typeof raw.payload === "object" && raw.payload !== null ? raw.payload : {};
             return jsonResult(payload);
           }
           case "camera_clip": {
-            const node = readStringParam(params, "node", { required: false });
-            const nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
+            const node = readStringParam(params, "node", { required: true });
+            const nodeId = await resolveNodeId(gatewayOpts, node);
             const facing =
               typeof params.facing === "string" ? params.facing.toLowerCase() : "front";
             if (facing !== "front" && facing !== "back") {
@@ -416,7 +278,7 @@ export function createNodesTool(options?: {
               typeof params.deviceId === "string" && params.deviceId.trim()
                 ? params.deviceId.trim()
                 : undefined;
-            const raw = (await callGatewayTool("node.invoke", gatewayOpts, {
+            const raw = await callGatewayTool<{ payload: unknown }>("node.invoke", gatewayOpts, {
               nodeId,
               command: "camera.clip",
               params: {
@@ -427,7 +289,7 @@ export function createNodesTool(options?: {
                 deviceId,
               },
               idempotencyKey: crypto.randomUUID(),
-            })) as { payload?: unknown };
+            });
             const payload = parseCameraClipPayload(raw?.payload);
             const filePath = cameraTempPath({
               kind: "clip",
@@ -446,8 +308,8 @@ export function createNodesTool(options?: {
             };
           }
           case "screen_record": {
-            const node = readStringParam(params, "node", { required: false });
-            const nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
+            const node = readStringParam(params, "node", { required: true });
+            const nodeId = await resolveNodeId(gatewayOpts, node);
             const durationMs =
               typeof params.durationMs === "number" && Number.isFinite(params.durationMs)
                 ? params.durationMs
@@ -462,7 +324,7 @@ export function createNodesTool(options?: {
                 : 0;
             const includeAudio =
               typeof params.includeAudio === "boolean" ? params.includeAudio : true;
-            const raw = (await callGatewayTool("node.invoke", gatewayOpts, {
+            const raw = await callGatewayTool<{ payload: unknown }>("node.invoke", gatewayOpts, {
               nodeId,
               command: "screen.record",
               params: {
@@ -473,7 +335,7 @@ export function createNodesTool(options?: {
                 includeAudio,
               },
               idempotencyKey: crypto.randomUUID(),
-            })) as { payload?: unknown };
+            });
             const payload = parseScreenRecordPayload(raw?.payload);
             const filePath =
               typeof params.outPath === "string" && params.outPath.trim()
@@ -492,8 +354,8 @@ export function createNodesTool(options?: {
             };
           }
           case "location_get": {
-            const node = readStringParam(params, "node", { required: false });
-            const nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
+            const node = readStringParam(params, "node", { required: true });
+            const nodeId = await resolveNodeId(gatewayOpts, node);
             const maxAgeMs =
               typeof params.maxAgeMs === "number" && Number.isFinite(params.maxAgeMs)
                 ? params.maxAgeMs
@@ -509,7 +371,7 @@ export function createNodesTool(options?: {
               Number.isFinite(params.locationTimeoutMs)
                 ? params.locationTimeoutMs
                 : undefined;
-            const raw = (await callGatewayTool("node.invoke", gatewayOpts, {
+            const raw = await callGatewayTool<{ payload: unknown }>("node.invoke", gatewayOpts, {
               nodeId,
               command: "location.get",
               params: {
@@ -518,7 +380,7 @@ export function createNodesTool(options?: {
                 timeoutMs: locationTimeoutMs,
               },
               idempotencyKey: crypto.randomUUID(),
-            })) as { payload?: unknown };
+            });
             return jsonResult(raw?.payload ?? {});
           }
           case "run": {
@@ -559,7 +421,7 @@ export function createNodesTool(options?: {
               typeof params.needsScreenRecording === "boolean"
                 ? params.needsScreenRecording
                 : undefined;
-            const raw = (await callGatewayTool("node.invoke", gatewayOpts, {
+            const raw = await callGatewayTool<{ payload: unknown }>("node.invoke", gatewayOpts, {
               nodeId,
               command: "system.run",
               params: {
@@ -573,7 +435,7 @@ export function createNodesTool(options?: {
               },
               timeoutMs: invokeTimeoutMs,
               idempotencyKey: crypto.randomUUID(),
-            })) as { payload?: unknown };
+            });
             return jsonResult(raw?.payload ?? {});
           }
           default:
@@ -590,6 +452,7 @@ export function createNodesTool(options?: {
         const message = err instanceof Error ? err.message : String(err);
         throw new Error(
           `agent=${agentLabel} node=${nodeLabel} gateway=${gatewayLabel} action=${action}: ${message}`,
+          { cause: err },
         );
       }
     },

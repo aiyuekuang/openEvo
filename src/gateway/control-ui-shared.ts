@@ -1,50 +1,69 @@
-/**
- * 简化版 control-ui-shared.ts
- * 只保留被其他模块使用的辅助函数
- */
+const CONTROL_UI_AVATAR_PREFIX = "/avatar";
 
-export const CONTROL_UI_AVATAR_PREFIX = "/__avatar";
-
-/**
- * Normalize a base path for consistency (e.g., ensure it starts with "/" and has no trailing slash).
- */
-export function normalizeControlUiBasePath(raw?: string | null): string {
-  if (!raw) return "";
-  let normalized = raw.trim();
-  if (!normalized.startsWith("/")) normalized = `/${normalized}`;
-  while (normalized.endsWith("/")) normalized = normalized.slice(0, -1);
-  return normalized === "/" ? "" : normalized;
+export function normalizeControlUiBasePath(basePath?: string): string {
+  if (!basePath) {
+    return "";
+  }
+  let normalized = basePath.trim();
+  if (!normalized) {
+    return "";
+  }
+  if (!normalized.startsWith("/")) {
+    normalized = `/${normalized}`;
+  }
+  if (normalized === "/") {
+    return "";
+  }
+  if (normalized.endsWith("/")) {
+    normalized = normalized.slice(0, -1);
+  }
+  return normalized;
 }
 
-/**
- * Build a URL for the avatar endpoint.
- */
-export function buildControlUiAvatarUrl(basePath: string | null | undefined, agentId: string): string {
-  const normalizedBase = normalizeControlUiBasePath(basePath);
-  return `${normalizedBase}${CONTROL_UI_AVATAR_PREFIX}/${encodeURIComponent(agentId)}`;
+export function buildControlUiAvatarUrl(basePath: string, agentId: string): string {
+  return basePath
+    ? `${basePath}${CONTROL_UI_AVATAR_PREFIX}/${agentId}`
+    : `${CONTROL_UI_AVATAR_PREFIX}/${agentId}`;
 }
 
-/**
- * Resolve an avatar value to a URL if it's a local avatar reference.
- * Returns the avatar URL or null if not applicable.
- */
+function looksLikeLocalAvatarPath(value: string): boolean {
+  if (/[\\/]/.test(value)) {
+    return true;
+  }
+  return /\.(png|jpe?g|gif|webp|svg|ico)$/i.test(value);
+}
+
 export function resolveAssistantAvatarUrl(params: {
   avatar?: string | null;
-  agentId?: string;
-  basePath?: string | null;
-}): string | null {
-  const { avatar, agentId, basePath } = params;
-  if (!avatar) return null;
-  
-  // If it's already a URL or data URI, return as-is
-  if (avatar.startsWith("http://") || avatar.startsWith("https://") || avatar.startsWith("data:")) {
+  agentId?: string | null;
+  basePath?: string;
+}): string | undefined {
+  const avatar = params.avatar?.trim();
+  if (!avatar) {
+    return undefined;
+  }
+  if (/^https?:\/\//i.test(avatar) || /^data:image\//i.test(avatar)) {
     return avatar;
   }
-  
-  // If it's a local file reference and we have an agentId, build the avatar URL
-  if (agentId && (avatar.startsWith("/") || avatar.startsWith("~") || avatar.includes("/"))) {
-    return buildControlUiAvatarUrl(basePath, agentId);
+
+  const basePath = normalizeControlUiBasePath(params.basePath);
+  const baseAvatarPrefix = basePath
+    ? `${basePath}${CONTROL_UI_AVATAR_PREFIX}/`
+    : `${CONTROL_UI_AVATAR_PREFIX}/`;
+  if (basePath && avatar.startsWith(`${CONTROL_UI_AVATAR_PREFIX}/`)) {
+    return `${basePath}${avatar}`;
   }
-  
-  return null;
+  if (avatar.startsWith(baseAvatarPrefix)) {
+    return avatar;
+  }
+
+  if (!params.agentId) {
+    return avatar;
+  }
+  if (looksLikeLocalAvatarPath(avatar)) {
+    return buildControlUiAvatarUrl(basePath, params.agentId);
+  }
+  return avatar;
 }
+
+export { CONTROL_UI_AVATAR_PREFIX };

@@ -45,120 +45,67 @@ export type ChannelUiMetadata = {
   configUiHints?: Record<string, ConfigUiHint>;
 };
 
-// 组标签 - 核心配置使用中文
 const GROUP_LABELS: Record<string, string> = {
-  // 核心配置 (Core)
-  auth: "模型认证",
-  channels: "消息渠道",
-  gateway: "网关",
-  ui: "界面",
-  // 常用配置
-  agents: "代理",
-  tools: "工具",
-  session: "会话",
-  // 高级配置
-  commands: "命令",
-  messages: "消息",
-  hooks: "钩子",
-  skills: "技能",
-  plugins: "插件",
-  cron: "定时任务",
-  logging: "日志",
-  // 其他
-  wizard: "设置向导",
-  update: "更新",
-  diagnostics: "诊断",
-  nodeHost: "节点",
-  bindings: "绑定",
-  audio: "音频",
-  models: "模型",
-  browser: "浏览器",
-  talk: "语音",
-  discovery: "发现",
-  presence: "在线状态",
-  voicewake: "语音唤醒",
+  wizard: "Wizard",
+  update: "Update",
+  diagnostics: "Diagnostics",
+  logging: "Logging",
+  gateway: "Gateway",
+  nodeHost: "Node Host",
+  agents: "Agents",
+  tools: "Tools",
+  bindings: "Bindings",
+  audio: "Audio",
+  models: "Models",
+  messages: "Messages",
+  commands: "Commands",
+  session: "Session",
+  cron: "Cron",
+  hooks: "Hooks",
+  ui: "UI",
+  browser: "Browser",
+  talk: "Talk",
+  channels: "Messaging Channels",
+  skills: "Skills",
+  plugins: "Plugins",
+  discovery: "Discovery",
+  presence: "Presence",
+  voicewake: "Voice Wake",
 };
 
-// 组排序 - 核心配置优先展示
 const GROUP_ORDER: Record<string, number> = {
-  // 核心配置 (1-10)
-  auth: 1,
-  channels: 2,
-  gateway: 3,
-  ui: 4,
-  // 常用配置 (20-40)
-  agents: 20,
-  tools: 25,
-  session: 30,
-  // 高级配置 (50-100)
-  commands: 50,
-  messages: 55,
-  hooks: 60,
-  skills: 65,
-  plugins: 70,
-  cron: 75,
-  logging: 80,
-  // 其他 (200+)
-  wizard: 200,
-  update: 205,
-  diagnostics: 210,
-  nodeHost: 215,
-  bindings: 220,
-  audio: 225,
-  models: 230,
-  browser: 235,
-  talk: 240,
-  discovery: 245,
-  presence: 250,
-  voicewake: 255,
+  wizard: 20,
+  update: 25,
+  diagnostics: 27,
+  gateway: 30,
+  nodeHost: 35,
+  agents: 40,
+  tools: 50,
+  bindings: 55,
+  audio: 60,
+  models: 70,
+  messages: 80,
+  commands: 85,
+  session: 90,
+  cron: 100,
+  hooks: 110,
+  ui: 120,
+  browser: 130,
+  talk: 140,
+  channels: 150,
+  skills: 200,
+  plugins: 205,
+  discovery: 210,
+  presence: 220,
+  voicewake: 230,
+  logging: 900,
 };
 
 const FIELD_LABELS: Record<string, string> = {
-  // === 核心配置标签 (Core) ===
-  // 模型认证 (auth)
-  "auth.profiles": "认证配置",
-  "auth.order": "认证优先级",
-  "auth.cooldowns.billingBackoffHours": "计费退避时间 (小时)",
-  // 网关 (gateway)
-  "gateway.port": "端口",
-  "gateway.bind": "绑定模式",
-  "gateway.auth.token": "认证 Token",
-  "gateway.auth.password": "认证密码",
-  "gateway.controlUi.enabled": "启用控制台",
-  "gateway.controlUi.basePath": "控制台路径",
-  // 界面 (ui)
-  "ui.seamColor": "主题色",
-  "ui.assistant.name": "助手名称",
-  "ui.assistant.avatar": "助手头像",
-  // 代理 (agents)
-  "agents.defaults.model.primary": "主模型",
-  "agents.defaults.model.fallbacks": "备选模型",
-  "agents.defaults.workspace": "工作区",
-  "agents.list": "Agent 列表",
-  // 消息渠道 (channels) - 国内渠道
-  "channels.wecom": "企业微信",
-  "channels.wecom.corpId": "企业 ID",
-  "channels.wecom.agentId": "应用 AgentId",
-  "channels.wecom.secret": "应用 Secret",
-  "channels.wecom.token": "回调 Token",
-  "channels.wecom.encodingAesKey": "回调 EncodingAESKey",
-  "channels.dingtalk": "钉钉",
-  "channels.dingtalk.appKey": "应用 AppKey",
-  "channels.dingtalk.appSecret": "应用 AppSecret",
-  "channels.dingtalk.webhookUrl": "Webhook URL",
-  "channels.dingtalk.signSecret": "加签密钥",
-  "channels.dingtalk.token": "回调 Token",
-  "channels.dingtalk.aesKey": "回调 AES Key",
-  "channels.feishu": "飞书",
-  "channels.feishu.appId": "应用 App ID",
-  "channels.feishu.appSecret": "应用 App Secret",
-  "channels.feishu.verificationToken": "Verification Token",
-  "channels.feishu.encryptKey": "Encrypt Key",
-  // === 原有标签 ===
-  "meta.lastTouchedVersion": "配置最后修改版本",
-  "meta.lastTouchedAt": "配置最后修改时间",
-  "update.channel": "更新渠道",
-  "update.checkOnStart": "启动时检查更新",
+  "meta.lastTouchedVersion": "Config Last Touched Version",
+  "meta.lastTouchedAt": "Config Last Touched At",
+  "update.channel": "Update Channel",
+  "update.checkOnStart": "Update Check on Start",
   "diagnostics.enabled": "Diagnostics Enabled",
   "diagnostics.flags": "Diagnostics Flags",
   "diagnostics.otel.enabled": "OpenTelemetry Enabled",
@@ -183,7 +130,8 @@ const FIELD_LABELS: Record<string, string> = {
   "gateway.remote.token": "Remote Gateway Token",
   "gateway.remote.password": "Remote Gateway Password",
   "gateway.remote.tlsFingerprint": "Remote Gateway TLS Fingerprint",
-  // Note: gateway.auth.token/password defined above in Core section
+  "gateway.auth.token": "Gateway Token",
+  "gateway.auth.password": "Gateway Password",
   "tools.media.image.enabled": "Enable Image Understanding",
   "tools.media.image.maxBytes": "Image Understanding Max Bytes",
   "tools.media.image.maxChars": "Image Understanding Max Chars",
@@ -251,7 +199,7 @@ const FIELD_LABELS: Record<string, string> = {
   "tools.web.fetch.cacheTtlMinutes": "Web Fetch Cache TTL (min)",
   "tools.web.fetch.maxRedirects": "Web Fetch Max Redirects",
   "tools.web.fetch.userAgent": "Web Fetch User-Agent",
-  // Note: gateway.controlUi.basePath defined above in Core section
+  "gateway.controlUi.basePath": "Control UI Base Path",
   "gateway.controlUi.allowInsecureAuth": "Allow Insecure Control UI Auth",
   "gateway.controlUi.dangerouslyDisableDeviceAuth": "Dangerously Disable Control UI Device Auth",
   "gateway.http.endpoints.chatCompletions.enabled": "OpenAI Chat Completions Endpoint",
@@ -265,7 +213,7 @@ const FIELD_LABELS: Record<string, string> = {
   "nodeHost.browserProxy.allowProfiles": "Node Browser Proxy Allowed Profiles",
   "skills.load.watch": "Watch Skills",
   "skills.load.watchDebounceMs": "Skills Watch Debounce (ms)",
-  // Note: agents.defaults.workspace defined above in Core section
+  "agents.defaults.workspace": "Workspace",
   "agents.defaults.repoRoot": "Repo Root",
   "agents.defaults.bootstrapMaxChars": "Bootstrap Max Chars",
   "agents.defaults.envelopeTimezone": "Envelope Timezone",
@@ -305,12 +253,15 @@ const FIELD_LABELS: Record<string, string> = {
     "Memory Search Hybrid Candidate Multiplier",
   "agents.defaults.memorySearch.cache.enabled": "Memory Search Embedding Cache",
   "agents.defaults.memorySearch.cache.maxEntries": "Memory Search Embedding Cache Max Entries",
-  // Note: auth.profiles, auth.order, auth.cooldowns defined above in Core section
+  "auth.profiles": "Auth Profiles",
+  "auth.order": "Auth Profile Order",
+  "auth.cooldowns.billingBackoffHours": "Billing Backoff (hours)",
   "auth.cooldowns.billingBackoffHoursByProvider": "Billing Backoff Overrides",
   "auth.cooldowns.billingMaxHours": "Billing Backoff Cap (hours)",
   "auth.cooldowns.failureWindowHours": "Failover Window (hours)",
   "agents.defaults.models": "Models",
-  // Note: agents.defaults.model.primary/fallbacks defined above in Core section
+  "agents.defaults.model.primary": "Primary Model",
+  "agents.defaults.model.fallbacks": "Model Fallbacks",
   "agents.defaults.imageModel.primary": "Image Model",
   "agents.defaults.imageModel.fallbacks": "Image Model Fallbacks",
   "agents.defaults.humanDelay.mode": "Human Delay Mode",
@@ -326,7 +277,9 @@ const FIELD_LABELS: Record<string, string> = {
   "commands.debug": "Allow /debug",
   "commands.restart": "Allow Restart",
   "commands.useAccessGroups": "Use Access Groups",
-  // Note: ui.seamColor, ui.assistant.name/avatar defined above in Core section
+  "ui.seamColor": "Accent Color",
+  "ui.assistant.name": "Assistant Name",
+  "ui.assistant.avatar": "Assistant Avatar",
   "browser.evaluateEnabled": "Browser Evaluate Enabled",
   "browser.snapshotDefaults": "Browser Snapshot Defaults",
   "browser.snapshotDefaults.mode": "Browser Snapshot Mode",
@@ -375,6 +328,8 @@ const FIELD_LABELS: Record<string, string> = {
   "channels.discord.maxLinesPerMessage": "Discord Max Lines Per Message",
   "channels.discord.intents.presence": "Discord Presence Intent",
   "channels.discord.intents.guildMembers": "Discord Guild Members Intent",
+  "channels.discord.pluralkit.enabled": "Discord PluralKit Enabled",
+  "channels.discord.pluralkit.token": "Discord PluralKit Token",
   "channels.slack.dm.policy": "Slack DM Policy",
   "channels.slack.allowBots": "Slack Allow Bot Messages",
   "channels.discord.token": "Discord Bot Token",
@@ -721,6 +676,10 @@ const FIELD_HELP: Record<string, string> = {
     "Enable the Guild Presences privileged intent. Must also be enabled in the Discord Developer Portal. Allows tracking user activities (e.g. Spotify). Default: false.",
   "channels.discord.intents.guildMembers":
     "Enable the Guild Members privileged intent. Must also be enabled in the Discord Developer Portal. Default: false.",
+  "channels.discord.pluralkit.enabled":
+    "Resolve PluralKit proxied messages and treat system members as distinct senders.",
+  "channels.discord.pluralkit.token":
+    "Optional PluralKit token for resolving private systems or members.",
   "channels.slack.dm.policy":
     'Direct message access control ("pairing" recommended). "open" requires channels.slack.dm.allowFrom=["*"].',
 };
@@ -748,19 +707,27 @@ type JsonSchemaObject = JsonSchemaNode & {
 };
 
 function cloneSchema<T>(value: T): T {
-  if (typeof structuredClone === "function") return structuredClone(value);
+  if (typeof structuredClone === "function") {
+    return structuredClone(value);
+  }
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
 function asSchemaObject(value: unknown): JsonSchemaObject | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
   return value as JsonSchemaObject;
 }
 
 function isObjectSchema(schema: JsonSchemaObject): boolean {
   const type = schema.type;
-  if (type === "object") return true;
-  if (Array.isArray(type) && type.includes("object")) return true;
+  if (type === "object") {
+    return true;
+  }
+  if (Array.isArray(type) && type.includes("object")) {
+    return true;
+  }
   return Boolean(schema.properties || schema.additionalProperties);
 }
 
@@ -778,7 +745,9 @@ function mergeObjectSchema(base: JsonSchemaObject, extension: JsonSchemaObject):
     merged.required = Array.from(mergedRequired);
   }
   const additional = extension.additionalProperties ?? base.additionalProperties;
-  if (additional !== undefined) merged.additionalProperties = additional;
+  if (additional !== undefined) {
+    merged.additionalProperties = additional;
+  }
   return merged;
 }
 
@@ -820,7 +789,9 @@ function applyPluginHints(hints: ConfigUiHints, plugins: PluginUiMetadata[]): Co
   const next: ConfigUiHints = { ...hints };
   for (const plugin of plugins) {
     const id = plugin.id.trim();
-    if (!id) continue;
+    if (!id) {
+      continue;
+    }
     const name = (plugin.name ?? id).trim() || id;
     const basePath = `plugins.entries.${id}`;
 
@@ -844,7 +815,9 @@ function applyPluginHints(hints: ConfigUiHints, plugins: PluginUiMetadata[]): Co
     const uiHints = plugin.configUiHints ?? {};
     for (const [relPathRaw, hint] of Object.entries(uiHints)) {
       const relPath = relPathRaw.trim().replace(/^\./, "");
-      if (!relPath) continue;
+      if (!relPath) {
+        continue;
+      }
       const key = `${basePath}.config.${relPath}`;
       next[key] = {
         ...next[key],
@@ -859,7 +832,9 @@ function applyChannelHints(hints: ConfigUiHints, channels: ChannelUiMetadata[]):
   const next: ConfigUiHints = { ...hints };
   for (const channel of channels) {
     const id = channel.id.trim();
-    if (!id) continue;
+    if (!id) {
+      continue;
+    }
     const basePath = `channels.${id}`;
     const current = next[basePath] ?? {};
     const label = channel.label?.trim();
@@ -873,7 +848,9 @@ function applyChannelHints(hints: ConfigUiHints, channels: ChannelUiMetadata[]):
     const uiHints = channel.configUiHints ?? {};
     for (const [relPathRaw, hint] of Object.entries(uiHints)) {
       const relPath = relPathRaw.trim().replace(/^\./, "");
-      if (!relPath) continue;
+      if (!relPath) {
+        continue;
+      }
       const key = `${basePath}.${relPath}`;
       next[key] = {
         ...next[key],
@@ -889,13 +866,17 @@ function listHeartbeatTargetChannels(channels: ChannelUiMetadata[]): string[] {
   const ordered: string[] = [];
   for (const id of CHANNEL_IDS) {
     const normalized = id.trim().toLowerCase();
-    if (!normalized || seen.has(normalized)) continue;
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
     seen.add(normalized);
     ordered.push(normalized);
   }
   for (const channel of channels) {
     const normalized = channel.id.trim().toLowerCase();
-    if (!normalized || seen.has(normalized)) continue;
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
     seen.add(normalized);
     ordered.push(normalized);
   }
@@ -927,14 +908,18 @@ function applyPluginSchemas(schema: ConfigSchema, plugins: PluginUiMetadata[]): 
   const root = asSchemaObject(next);
   const pluginsNode = asSchemaObject(root?.properties?.plugins);
   const entriesNode = asSchemaObject(pluginsNode?.properties?.entries);
-  if (!entriesNode) return next;
+  if (!entriesNode) {
+    return next;
+  }
 
   const entryBase = asSchemaObject(entriesNode.additionalProperties);
   const entryProperties = entriesNode.properties ?? {};
   entriesNode.properties = entryProperties;
 
   for (const plugin of plugins) {
-    if (!plugin.configSchema) continue;
+    if (!plugin.configSchema) {
+      continue;
+    }
     const entrySchema = entryBase
       ? cloneSchema(entryBase)
       : ({ type: "object" } as JsonSchemaObject);
@@ -963,12 +948,16 @@ function applyChannelSchemas(schema: ConfigSchema, channels: ChannelUiMetadata[]
   const next = cloneSchema(schema);
   const root = asSchemaObject(next);
   const channelsNode = asSchemaObject(root?.properties?.channels);
-  if (!channelsNode) return next;
+  if (!channelsNode) {
+    return next;
+  }
   const channelProps = channelsNode.properties ?? {};
   channelsNode.properties = channelProps;
 
   for (const channel of channels) {
-    if (!channel.configSchema) continue;
+    if (!channel.configSchema) {
+      continue;
+    }
     const existing = asSchemaObject(channelProps[channel.id]);
     const incoming = asSchemaObject(channel.configSchema);
     if (existing && incoming && isObjectSchema(existing) && isObjectSchema(incoming)) {
@@ -986,7 +975,9 @@ let cachedBase: ConfigSchemaResponse | null = null;
 function stripChannelSchema(schema: ConfigSchema): ConfigSchema {
   const next = cloneSchema(schema);
   const root = asSchemaObject(next);
-  if (!root || !root.properties) return next;
+  if (!root || !root.properties) {
+    return next;
+  }
   const channelsNode = asSchemaObject(root.properties.channels);
   if (channelsNode) {
     channelsNode.properties = {};
@@ -997,7 +988,9 @@ function stripChannelSchema(schema: ConfigSchema): ConfigSchema {
 }
 
 function buildBaseConfigSchema(): ConfigSchemaResponse {
-  if (cachedBase) return cachedBase;
+  if (cachedBase) {
+    return cachedBase;
+  }
   const schema = OpenClawSchema.toJSONSchema({
     target: "draft-07",
     unrepresentable: "any",
@@ -1021,7 +1014,9 @@ export function buildConfigSchema(params?: {
   const base = buildBaseConfigSchema();
   const plugins = params?.plugins ?? [];
   const channels = params?.channels ?? [];
-  if (plugins.length === 0 && channels.length === 0) return base;
+  if (plugins.length === 0 && channels.length === 0) {
+    return base;
+  }
   const mergedHints = applySensitiveHints(
     applyHeartbeatTargetHints(
       applyChannelHints(applyPluginHints(base.uiHints, plugins), channels),

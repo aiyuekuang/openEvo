@@ -1,12 +1,12 @@
+import type { ReplyPayload } from "../../auto-reply/types.js";
 import {
   DEFAULT_HEARTBEAT_ACK_MAX_CHARS,
   resolveHeartbeatPrompt,
   stripHeartbeatToken,
 } from "../../auto-reply/heartbeat.js";
-import { HEARTBEAT_TOKEN } from "../../auto-reply/tokens.js";
 import { getReplyFromConfig } from "../../auto-reply/reply.js";
-import type { ReplyPayload } from "../../auto-reply/types.js";
-// OpenClaw CN: WhatsApp heartbeat removed (海外渠道专用)
+import { HEARTBEAT_TOKEN } from "../../auto-reply/tokens.js";
+import { resolveWhatsAppHeartbeatRecipients } from "../../channels/plugins/whatsapp-heartbeat.js";
 import { loadConfig } from "../../config/config.js";
 import {
   loadSessionStore,
@@ -28,11 +28,17 @@ import { elide } from "./util.js";
 function resolveHeartbeatReplyPayload(
   replyResult: ReplyPayload | ReplyPayload[] | undefined,
 ): ReplyPayload | undefined {
-  if (!replyResult) return undefined;
-  if (!Array.isArray(replyResult)) return replyResult;
+  if (!replyResult) {
+    return undefined;
+  }
+  if (!Array.isArray(replyResult)) {
+    return replyResult;
+  }
   for (let idx = replyResult.length - 1; idx >= 0; idx -= 1) {
     const payload = replyResult[idx];
-    if (!payload) continue;
+    if (!payload) {
+      continue;
+    }
     if (payload.text || payload.mediaUrl || (payload.mediaUrls && payload.mediaUrls.length > 0)) {
       return payload;
     }
@@ -221,7 +227,9 @@ export async function runWebHeartbeatOnce(opts: {
         store[sessionSnapshot.key].updatedAt = sessionSnapshot.entry.updatedAt;
         await updateSessionStore(storePath, (nextStore) => {
           const nextEntry = nextStore[sessionSnapshot.key];
-          if (!nextEntry) return;
+          if (!nextEntry) {
+            return;
+          }
           nextStore[sessionSnapshot.key] = {
             ...nextEntry,
             updatedAt: sessionSnapshot.entry.updatedAt,
@@ -323,10 +331,9 @@ export async function runWebHeartbeatOnce(opts: {
   }
 }
 
-// OpenClaw CN: WhatsApp heartbeat removed - return empty for CN version
 export function resolveHeartbeatRecipients(
-  _cfg: ReturnType<typeof loadConfig>,
-  _opts: { to?: string; all?: boolean } = {},
+  cfg: ReturnType<typeof loadConfig>,
+  opts: { to?: string; all?: boolean } = {},
 ) {
-  return [];
+  return resolveWhatsAppHeartbeatRecipients(cfg, opts);
 }

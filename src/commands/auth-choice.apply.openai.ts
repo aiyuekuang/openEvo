@@ -1,13 +1,13 @@
 import { loginOpenAICodex } from "@mariozechner/pi-ai";
+import type { ApplyAuthChoiceParams, ApplyAuthChoiceResult } from "./auth-choice.apply.js";
 import { resolveEnvApiKey } from "../agents/model-auth.js";
 import { upsertSharedEnvVar } from "../infra/env-file.js";
-import { isRemoteEnvironment } from "./oauth-env.js";
 import {
   formatApiKeyPreview,
   normalizeApiKeyInput,
   validateApiKeyInput,
 } from "./auth-choice.api-key.js";
-import type { ApplyAuthChoiceParams, ApplyAuthChoiceResult } from "./auth-choice.apply.js";
+import { isRemoteEnvironment } from "./oauth-env.js";
 import { createVpsAwareOAuthHandlers } from "./oauth-flow.js";
 import { applyAuthProfileConfig, writeOAuthCredentials } from "./onboard-auth.js";
 import { openUrl } from "./onboard-helpers.js";
@@ -15,8 +15,6 @@ import {
   applyOpenAICodexModelDefault,
   OPENAI_CODEX_DEFAULT_MODEL,
 } from "./openai-codex-model-default.js";
-
-const OPENAI_API_KEYS_URL = "https://platform.openai.com/api-keys";
 
 export async function applyAuthChoiceOpenAI(
   params: ApplyAuthChoiceParams,
@@ -53,18 +51,8 @@ export async function applyAuthChoiceOpenAI(
     if (params.opts?.token && params.opts?.tokenProvider === "openai") {
       key = params.opts.token;
     } else {
-      // Auto-open browser to API keys page
-      await params.prompter.note(
-        [
-          "Opening OpenAI Platform to get your API key...",
-          `URL: ${OPENAI_API_KEYS_URL}`,
-        ].join("\n"),
-        "OpenAI API Key",
-      );
-      await openUrl(OPENAI_API_KEYS_URL);
-
       key = await params.prompter.text({
-        message: "Paste your OpenAI API key",
+        message: "Enter OpenAI API key",
         validate: validateApiKeyInput,
       });
     }
@@ -86,7 +74,9 @@ export async function applyAuthChoiceOpenAI(
     let nextConfig = params.config;
     let agentModelOverride: string | undefined;
     const noteAgentModel = async (model: string) => {
-      if (!params.agentId) return;
+      if (!params.agentId) {
+        return;
+      }
       await params.prompter.note(
         `Default model set to ${model} for agent "${params.agentId}".`,
         "Model configured",

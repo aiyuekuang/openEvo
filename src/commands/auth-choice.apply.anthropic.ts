@@ -1,15 +1,12 @@
+import type { ApplyAuthChoiceParams, ApplyAuthChoiceResult } from "./auth-choice.apply.js";
 import { upsertAuthProfile } from "../agents/auth-profiles.js";
 import {
   formatApiKeyPreview,
   normalizeApiKeyInput,
   validateApiKeyInput,
 } from "./auth-choice.api-key.js";
-import type { ApplyAuthChoiceParams, ApplyAuthChoiceResult } from "./auth-choice.apply.js";
 import { buildTokenProfileId, validateAnthropicSetupToken } from "./auth-token.js";
 import { applyAuthProfileConfig, setAnthropicApiKey } from "./onboard-auth.js";
-import { openUrl } from "./onboard-helpers.js";
-
-const ANTHROPIC_API_KEYS_URL = "https://console.anthropic.com/settings/api-keys";
 
 export async function applyAuthChoiceAnthropic(
   params: ApplyAuthChoiceParams,
@@ -86,18 +83,8 @@ export async function applyAuthChoiceAnthropic(
       }
     }
     if (!hasCredential) {
-      // Auto-open browser to API keys page
-      await params.prompter.note(
-        [
-          "Opening Anthropic Console to get your API key...",
-          `URL: ${ANTHROPIC_API_KEYS_URL}`,
-        ].join("\n"),
-        "Anthropic API Key",
-      );
-      await openUrl(ANTHROPIC_API_KEYS_URL);
-
       const key = await params.prompter.text({
-        message: "Paste your Anthropic API key",
+        message: "Enter Anthropic API key",
         validate: validateApiKeyInput,
       });
       await setAnthropicApiKey(normalizeApiKeyInput(String(key)), params.agentDir);

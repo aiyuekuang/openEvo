@@ -1,9 +1,22 @@
 import type { OutboundSendDeps } from "../infra/outbound/deliver.js";
 
-// OpenClaw CN: 移除海外渠道 send deps
-// 中国渠道 (wecom, dingtalk, feishu) 将通过插件注册
-export type CliDeps = Record<string, never>;
+export type CliDeps = {
+  sendMessageWhatsApp: NonNullable<OutboundSendDeps["sendWhatsApp"]>;
+  sendMessageTelegram: NonNullable<OutboundSendDeps["sendTelegram"]>;
+  sendMessageDiscord: NonNullable<OutboundSendDeps["sendDiscord"]>;
+  sendMessageSlack: NonNullable<OutboundSendDeps["sendSlack"]>;
+  sendMessageSignal: NonNullable<OutboundSendDeps["sendSignal"]>;
+  sendMessageIMessage: NonNullable<OutboundSendDeps["sendIMessage"]>;
+};
 
-export function createOutboundSendDeps(_deps: CliDeps): OutboundSendDeps {
-  return {};
+// Provider docking: extend this mapping when adding new outbound send deps.
+export function createOutboundSendDeps(deps: CliDeps): OutboundSendDeps {
+  return {
+    sendWhatsApp: deps.sendMessageWhatsApp,
+    sendTelegram: deps.sendMessageTelegram,
+    sendDiscord: deps.sendMessageDiscord,
+    sendSlack: deps.sendMessageSlack,
+    sendSignal: deps.sendMessageSignal,
+    sendIMessage: deps.sendMessageIMessage,
+  };
 }

@@ -4,57 +4,59 @@ import { requireActivePluginRegistry } from "../plugins/runtime.js";
 
 // Channel docking: add new core channels here (order + meta + aliases), then
 // register the plugin in its extension entrypoint and keep protocol IDs in sync.
-//
-// OpenClaw CN: 中国渠道 - 企业微信/钉钉/飞书
 export const CHAT_CHANNEL_ORDER = [
-  "wecom",
-  "dingtalk",
-  "feishu",
+  "telegram",
+  "whatsapp",
+  "discord",
   "googlechat",
+  "slack",
+  "signal",
+  "imessage",
 ] as const;
 
 export type ChatChannelId = (typeof CHAT_CHANNEL_ORDER)[number];
 
 export const CHANNEL_IDS = [...CHAT_CHANNEL_ORDER] as const;
 
-export const DEFAULT_CHAT_CHANNEL: ChatChannelId = "wecom";
+export const DEFAULT_CHAT_CHANNEL: ChatChannelId = "whatsapp";
 
 export type ChatChannelMeta = ChannelMeta;
 
 const WEBSITE_URL = "https://openclaw.ai";
 
 const CHAT_CHANNEL_META: Record<ChatChannelId, ChannelMeta> = {
-  wecom: {
-    id: "wecom",
-    label: "企业微信",
-    selectionLabel: "企业微信 (WeCom)",
-    detailLabel: "企业微信应用",
-    docsPath: "/channels/wecom",
-    docsLabel: "wecom",
-    blurb: "企业微信应用机器人，支持自建应用。",
-    systemImage: "message.badge",
-    selectionDocsPrefix: "文档:",
+  telegram: {
+    id: "telegram",
+    label: "Telegram",
+    selectionLabel: "Telegram (Bot API)",
+    detailLabel: "Telegram Bot",
+    docsPath: "/channels/telegram",
+    docsLabel: "telegram",
+    blurb: "simplest way to get started — register a bot with @BotFather and get going.",
+    systemImage: "paperplane",
+    selectionDocsPrefix: "",
+    selectionDocsOmitLabel: true,
     selectionExtras: [WEBSITE_URL],
   },
-  dingtalk: {
-    id: "dingtalk",
-    label: "钉钉",
-    selectionLabel: "钉钉 (DingTalk)",
-    detailLabel: "钉钉机器人",
-    docsPath: "/channels/dingtalk",
-    docsLabel: "dingtalk",
-    blurb: "钉钉企业内部应用或群机器人。",
-    systemImage: "bubble.left.and.bubble.right",
+  whatsapp: {
+    id: "whatsapp",
+    label: "WhatsApp",
+    selectionLabel: "WhatsApp (QR link)",
+    detailLabel: "WhatsApp Web",
+    docsPath: "/channels/whatsapp",
+    docsLabel: "whatsapp",
+    blurb: "works with your own number; recommend a separate phone + eSIM.",
+    systemImage: "message",
   },
-  feishu: {
-    id: "feishu",
-    label: "飞书",
-    selectionLabel: "飞书 (Feishu/Lark)",
-    detailLabel: "飞书机器人",
-    docsPath: "/channels/feishu",
-    docsLabel: "feishu",
-    blurb: "飞书企业自建应用，支持消息卡片。",
-    systemImage: "paperplane",
+  discord: {
+    id: "discord",
+    label: "Discord",
+    selectionLabel: "Discord (Bot API)",
+    detailLabel: "Discord Bot",
+    docsPath: "/channels/discord",
+    docsLabel: "discord",
+    blurb: "very well supported right now.",
+    systemImage: "bubble.left.and.bubble.right",
   },
   googlechat: {
     id: "googlechat",
@@ -66,12 +68,40 @@ const CHAT_CHANNEL_META: Record<ChatChannelId, ChannelMeta> = {
     blurb: "Google Workspace Chat app with HTTP webhook.",
     systemImage: "message.badge",
   },
+  slack: {
+    id: "slack",
+    label: "Slack",
+    selectionLabel: "Slack (Socket Mode)",
+    detailLabel: "Slack Bot",
+    docsPath: "/channels/slack",
+    docsLabel: "slack",
+    blurb: "supported (Socket Mode).",
+    systemImage: "number",
+  },
+  signal: {
+    id: "signal",
+    label: "Signal",
+    selectionLabel: "Signal (signal-cli)",
+    detailLabel: "Signal REST",
+    docsPath: "/channels/signal",
+    docsLabel: "signal",
+    blurb: 'signal-cli linked device; more setup (David Reagans: "Hop on Discord.").',
+    systemImage: "antenna.radiowaves.left.and.right",
+  },
+  imessage: {
+    id: "imessage",
+    label: "iMessage",
+    selectionLabel: "iMessage (imsg)",
+    detailLabel: "iMessage",
+    docsPath: "/channels/imessage",
+    docsLabel: "imessage",
+    blurb: "this is still a work in progress.",
+    systemImage: "message.fill",
+  },
 };
 
 export const CHAT_CHANNEL_ALIASES: Record<string, ChatChannelId> = {
-  wechat: "wecom",
-  "wechat-work": "wecom",
-  lark: "feishu",
+  imsg: "imessage",
   "google-chat": "googlechat",
   gchat: "googlechat",
 };
@@ -95,11 +125,11 @@ export function getChatChannelMeta(id: ChatChannelId): ChatChannelMeta {
 
 export function normalizeChatChannelId(raw?: string | null): ChatChannelId | null {
   const normalized = normalizeChannelKey(raw);
-  if (!normalized) return null;
+  if (!normalized) {
+    return null;
+  }
   const resolved = CHAT_CHANNEL_ALIASES[normalized] ?? normalized;
-  return CHAT_CHANNEL_ORDER.includes(resolved as ChatChannelId)
-    ? (resolved as ChatChannelId)
-    : null;
+  return CHAT_CHANNEL_ORDER.includes(resolved) ? resolved : null;
 }
 
 // Channel docking: prefer this helper in shared code. Importing from
@@ -114,17 +144,21 @@ export function normalizeChannelId(raw?: string | null): ChatChannelId | null {
 // monitors, web login, etc). The plugin registry must be initialized first.
 export function normalizeAnyChannelId(raw?: string | null): ChannelId | null {
   const key = normalizeChannelKey(raw);
-  if (!key) return null;
+  if (!key) {
+    return null;
+  }
 
   const registry = requireActivePluginRegistry();
   const hit = registry.channels.find((entry) => {
     const id = String(entry.plugin.id ?? "")
       .trim()
       .toLowerCase();
-    if (id && id === key) return true;
+    if (id && id === key) {
+      return true;
+    }
     return (entry.plugin.meta.aliases ?? []).some((alias) => alias.trim().toLowerCase() === key);
   });
-  return (hit?.plugin.id as ChannelId | undefined) ?? null;
+  return hit?.plugin.id ?? null;
 }
 
 export function formatChannelPrimerLine(meta: ChatChannelMeta): string {

@@ -25,7 +25,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "vite build && tsc -p tsconfig.electron.json && tsc -p tsconfig.preload.json && electron electron.cjs",
+    "start": "lsof -ti:18789 | xargs kill -9 2>/dev/null; node openclaw.mjs gateway & vite build && tsc -p tsconfig.electron.json && tsc -p tsconfig.preload.json && electron electron.cjs",
     "dev": "lsof -ti:18789 | xargs kill -9 2>/dev/null; lsof -ti:5173 | xargs kill -9 2>/dev/null; node openclaw.mjs gateway & vite",
     "build": "vite build && tsc -p tsconfig.electron.json && tsc -p tsconfig.preload.json",
     "dist": "pnpm build && electron-builder",
@@ -49,10 +49,10 @@
     "@homebridge/ciao": "^1.3.4",
     "@line/bot-sdk": "^10.6.0",
     "@lydell/node-pty": "1.2.0-beta.3",
-    "@mariozechner/pi-agent-core": "0.49.3",
-    "@mariozechner/pi-ai": "0.49.3",
-    "@mariozechner/pi-coding-agent": "0.49.3",
-    "@mariozechner/pi-tui": "0.49.3",
+    "@mariozechner/pi-agent-core": "0.51.0",
+    "@mariozechner/pi-ai": "0.51.0",
+    "@mariozechner/pi-coding-agent": "0.51.0",
+    "@mariozechner/pi-tui": "0.51.0",
     "@mozilla/readability": "^0.6.0",
     "@noble/ed25519": "3.0.0",
     "@sinclair/typebox": "0.34.47",
@@ -107,6 +107,7 @@
     "node-llama-cpp": "3.15.0"
   },
   "devDependencies": {
+    "@grammyjs/types": "^3.23.0",
     "@lit-labs/signals": "^0.2.0",
     "@lit/context": "^1.1.6",
     "@mariozechner/mini-lit": "0.2.1",
