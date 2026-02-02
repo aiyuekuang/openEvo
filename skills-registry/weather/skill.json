@@ -1,0 +1,18 @@
+{
+  "name": "weather",
+  "description": "Get current weather and forecasts (no API key required).",
+  "version": "1.0.0",
+  "emoji": "🌤️",
+  "homepage": "https://wttr.in/:help",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "curl CLI",
+      "description": "检测 curl 是否可用 (系统自带)"
+    }
+  ],
+  "actions": {}
+}

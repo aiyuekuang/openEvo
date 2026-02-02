@@ -1,0 +1,18 @@
+{
+  "name": "coding-agent",
+  "description": "Run Codex CLI, Claude Code, OpenCode, or Pi Coding Agent via background process for programmatic control.",
+  "version": "1.0.0",
+  "emoji": "🧩",
+  "homepage": "https://github.com/anthropics/anthropic-quickstarts",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "ready",
+      "script": "scripts/check-ready.mjs",
+      "label": "就绪",
+      "description": "此技能无需额外配置"
+    }
+  ],
+  "actions": {}
+}

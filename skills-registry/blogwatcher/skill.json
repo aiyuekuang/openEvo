@@ -1,0 +1,24 @@
+{
+  "name": "blogwatcher",
+  "description": "Monitor blogs and RSS/Atom feeds for updates using the blogwatcher CLI.",
+  "version": "1.0.0",
+  "emoji": "📰",
+  "homepage": "https://github.com/Hyaxia/blogwatcher",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "blogwatcher CLI",
+      "description": "检测 blogwatcher 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 blogwatcher",
+      "description": "安装 blogwatcher 命令行工具"
+    }
+  }
+}

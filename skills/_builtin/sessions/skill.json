@@ -1,0 +1,12 @@
+{
+  "name": "sessions",
+  "displayName": "会话管理",
+  "description": "管理子代理会话",
+  "version": "1.0.0",
+  "emoji": "🔄",
+  "category": "tool",
+  "tags": ["会话", "session", "agent", "子代理"],
+  "builtin": true,
+  "tools": ["sessions_list", "sessions_history", "sessions_send", "sessions_spawn"],
+  "platforms": ["darwin", "linux", "win32"]
+}

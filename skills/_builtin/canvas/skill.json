@@ -1,0 +1,12 @@
+{
+  "name": "canvas",
+  "displayName": "Canvas 画布",
+  "description": "在客户端显示 HTML/Web 内容",
+  "version": "1.0.0",
+  "emoji": "🎨",
+  "category": "tool",
+  "tags": ["canvas", "画布", "html", "显示"],
+  "builtin": true,
+  "tools": ["canvas"],
+  "platforms": ["darwin", "linux", "win32"]
+}

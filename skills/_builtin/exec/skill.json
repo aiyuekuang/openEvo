@@ -1,0 +1,12 @@
+{
+  "name": "exec",
+  "displayName": "命令执行",
+  "description": "执行 Shell 命令",
+  "version": "1.0.0",
+  "emoji": "💻",
+  "category": "tool",
+  "tags": ["命令", "shell", "terminal", "exec"],
+  "builtin": true,
+  "tools": ["exec", "process"],
+  "platforms": ["darwin", "linux", "win32"]
+}

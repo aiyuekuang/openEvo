@@ -7,6 +7,16 @@ import { registerSkillIpcHandlers } from './skill-ipc.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// =============================================================================
+// 单实例锁 - 防止多个实例同时运行
+// =============================================================================
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 另一个实例已在运行，退出当前实例
+  app.quit();
+}
+
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let gatewayManager: GatewayManager | null = null;
@@ -69,13 +79,13 @@ function createTray() {
     },
     { 
       label: '停止服务', 
-      click: () => gatewayManager?.stop() 
+      click: async () => await gatewayManager?.stop() 
     },
     { type: 'separator' },
     { 
       label: '退出', 
-      click: () => {
-        gatewayManager?.stop();
+      click: async () => {
+        await gatewayManager?.stop();
         app.quit();
       }
     },
@@ -114,13 +124,20 @@ function setupIPC() {
   registerSkillIpcHandlers(ipcMain);
 }
 
+// 当第二个实例尝试启动时，聚焦已有窗口
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 app.whenReady().then(async () => {
   gatewayManager = new GatewayManager();
   
   // 先启动 Gateway
-  console.log('[App] 启动 Gateway...');
   await gatewayManager.start();
-  console.log('[App] Gateway 已启动');
   
   // 再创建窗口
   createWindow();
@@ -136,13 +153,13 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   if (process.platform !== 'darwin') {
-    gatewayManager?.stop();
+    await gatewayManager?.stop();
     app.quit();
   }
 });
 
-app.on('before-quit', () => {
-  gatewayManager?.stop();
+app.on('before-quit', async () => {
+  await gatewayManager?.stop();
 });

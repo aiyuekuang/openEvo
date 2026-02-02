@@ -183,7 +183,7 @@ export type SkillReview = {
  * 技能包安装来源
  */
 export type SkillSource =
-  | { type: "builtin" } // 内置技能
+  | { type: "builtin"; skillPath?: string } // 内置技能，skillPath 用于定位 SKILL.md 文件
   | { type: "npm"; spec: string } // npm 包
   | { type: "local"; path: string } // 本地路径
   | { type: "git"; url: string; ref?: string } // Git 仓库

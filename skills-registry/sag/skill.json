@@ -1,0 +1,24 @@
+{
+  "name": "sag",
+  "description": "ElevenLabs text-to-speech with mac-style say UX.",
+  "version": "1.0.0",
+  "emoji": "🗣️",
+  "homepage": "https://sag.sh",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "sag CLI",
+      "description": "检测 sag 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 sag",
+      "description": "安装 sag 命令行工具"
+    }
+  }
+}

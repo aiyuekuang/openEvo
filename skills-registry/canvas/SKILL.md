@@ -1,3 +1,9 @@
+---
+name: canvas
+description: Display HTML content on connected OpenClaw nodes (Mac app, iOS, Android). Use for games, visualizations, dashboards, and interactive demos.
+---
+metadata: {"openclaw":{"emoji":"🎨","requires":{"config":["canvasHost.enabled"]}}}
+
 # Canvas Skill
 
 Display HTML content on connected OpenClaw nodes (Mac app, iOS, Android).

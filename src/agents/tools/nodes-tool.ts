@@ -1,4 +1,9 @@
+import { execFile } from "node:child_process";
 import crypto from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
 
 import type { AgentToolResult } from "@mariozechner/pi-agent-core";
 import { Type } from "@sinclair/typebox";
@@ -25,6 +30,77 @@ import { sanitizeToolResultImages } from "../tool-images.js";
 import { type AnyAgentTool, jsonResult, readStringParam } from "./common.js";
 import { callGatewayTool, type GatewayCallOptions } from "./gateway.js";
 import { listNodes, resolveNodeIdFromList, resolveNodeId } from "./nodes-utils.js";
+
+const execFileAsync = promisify(execFile);
+
+/**
+ * Try to capture photo using local imagesnap (macOS only).
+ * Returns null if imagesnap is not available or not on macOS.
+ */
+async function tryLocalImagesnap(params: {
+  deviceId?: string;
+  delayMs?: number;
+}): Promise<{ base64: string; format: string; width?: number; height?: number } | null> {
+  // Only works on macOS
+  if (process.platform !== "darwin") return null;
+
+  // Check if imagesnap is available
+  try {
+    await execFileAsync("which", ["imagesnap"]);
+  } catch {
+    return null;
+  }
+
+  const tempDir = os.tmpdir();
+  const timestamp = Date.now();
+  const outPath = path.join(tempDir, `openclaw-snap-${timestamp}.jpg`);
+
+  const args: string[] = [];
+  if (params.deviceId) {
+    args.push("-d", params.deviceId);
+  }
+  // Add warmup time for camera auto-exposure
+  const warmupSeconds = params.delayMs ? Math.max(1, params.delayMs / 1000) : 1;
+  args.push("-w", String(warmupSeconds));
+  args.push(outPath);
+
+  try {
+    await execFileAsync("imagesnap", args, { timeout: 30000 });
+    const imageData = fs.readFileSync(outPath);
+    const base64 = imageData.toString("base64");
+    // Clean up temp file
+    fs.unlinkSync(outPath);
+    return { base64, format: "jpg" };
+  } catch (error) {
+    // Clean up on error
+    try {
+      fs.unlinkSync(outPath);
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+}
+
+/**
+ * List local cameras using imagesnap -l (macOS only).
+ */
+async function tryLocalCameraList(): Promise<{ devices: string[] } | null> {
+  if (process.platform !== "darwin") return null;
+
+  try {
+    const { stdout } = await execFileAsync("imagesnap", ["-l"], { timeout: 5000 });
+    const lines = stdout.split("\n").filter((line) => line.startsWith("<"));
+    const devices = lines.map((line) => {
+      // Parse "<device_id>" or "<=> device_name"
+      const match = line.match(/^<(.+)>$/) || line.match(/^<=?>\s*(.+)$/);
+      return match ? match[1].trim() : line.trim();
+    });
+    return { devices };
+  } catch {
+    return null;
+  }
+}
 
 const NODES_TOOL_ACTIONS = [
   "status",
@@ -166,8 +242,53 @@ export function createNodesTool(options?: {
             return jsonResult({ ok: true });
           }
           case "camera_snap": {
-            const node = readStringParam(params, "node", { required: true });
-            const nodeId = await resolveNodeId(gatewayOpts, node);
+            const node = readStringParam(params, "node", { required: false });
+            let nodeId: string | null = null;
+            try {
+              nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
+            } catch {
+              // No node available, will try local imagesnap
+            }
+
+            // If no node, try local imagesnap fallback (macOS only)
+            if (!nodeId) {
+              const deviceId =
+                typeof params.deviceId === "string" && params.deviceId.trim()
+                  ? params.deviceId.trim()
+                  : undefined;
+              const delayMs =
+                typeof params.delayMs === "number" && Number.isFinite(params.delayMs)
+                  ? params.delayMs
+                  : undefined;
+
+              const localResult = await tryLocalImagesnap({ deviceId, delayMs });
+              if (localResult) {
+                const isJpeg = localResult.format === "jpg" || localResult.format === "jpeg";
+                const filePath = cameraTempPath({
+                  kind: "snap",
+                  facing: "front",
+                  ext: isJpeg ? "jpg" : "png",
+                });
+                await writeBase64ToFile(filePath, localResult.base64);
+                const content: AgentToolResult<unknown>["content"] = [
+                  { type: "text", text: `MEDIA:${filePath}` },
+                  {
+                    type: "image",
+                    data: localResult.base64,
+                    mimeType: isJpeg ? "image/jpeg" : "image/png",
+                  },
+                ];
+                const details = [{
+                  facing: "local",
+                  path: filePath,
+                  source: "imagesnap",
+                }];
+                const result: AgentToolResult<unknown> = { content, details };
+                return await sanitizeToolResultImages(result, "nodes:camera_snap:local");
+              }
+              throw new Error("node required (no paired node and local imagesnap not available)");
+            }
+
             const facingRaw =
               typeof params.facing === "string" ? params.facing.toLowerCase() : "both";
             const facings: CameraFacing[] =
@@ -248,8 +369,23 @@ export function createNodesTool(options?: {
             return await sanitizeToolResultImages(result, "nodes:camera_snap");
           }
           case "camera_list": {
-            const node = readStringParam(params, "node", { required: true });
-            const nodeId = await resolveNodeId(gatewayOpts, node);
+            const node = readStringParam(params, "node", { required: false });
+            let nodeId: string | null = null;
+            try {
+              nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
+            } catch {
+              // No node available, will try local imagesnap
+            }
+
+            // If no node, try local imagesnap -l fallback (macOS only)
+            if (!nodeId) {
+              const localResult = await tryLocalCameraList();
+              if (localResult) {
+                return jsonResult({ devices: localResult.devices, source: "imagesnap" });
+              }
+              throw new Error("node required (no paired node and local imagesnap not available)");
+            }
+
             const raw = (await callGatewayTool("node.invoke", gatewayOpts, {
               nodeId,
               command: "camera.list",
@@ -261,8 +397,8 @@ export function createNodesTool(options?: {
             return jsonResult(payload);
           }
           case "camera_clip": {
-            const node = readStringParam(params, "node", { required: true });
-            const nodeId = await resolveNodeId(gatewayOpts, node);
+            const node = readStringParam(params, "node", { required: false });
+            const nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
             const facing =
               typeof params.facing === "string" ? params.facing.toLowerCase() : "front";
             if (facing !== "front" && facing !== "back") {
@@ -310,8 +446,8 @@ export function createNodesTool(options?: {
             };
           }
           case "screen_record": {
-            const node = readStringParam(params, "node", { required: true });
-            const nodeId = await resolveNodeId(gatewayOpts, node);
+            const node = readStringParam(params, "node", { required: false });
+            const nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
             const durationMs =
               typeof params.durationMs === "number" && Number.isFinite(params.durationMs)
                 ? params.durationMs
@@ -356,8 +492,8 @@ export function createNodesTool(options?: {
             };
           }
           case "location_get": {
-            const node = readStringParam(params, "node", { required: true });
-            const nodeId = await resolveNodeId(gatewayOpts, node);
+            const node = readStringParam(params, "node", { required: false });
+            const nodeId = await resolveNodeId(gatewayOpts, node, true); // allowDefault=true
             const maxAgeMs =
               typeof params.maxAgeMs === "number" && Number.isFinite(params.maxAgeMs)
                 ? params.maxAgeMs

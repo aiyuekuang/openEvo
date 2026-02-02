@@ -3,10 +3,16 @@
  *
  * 静态定义的技能列表，包含官方认证的渠道、模型提供商等
  *
+ * 核心内置功能从 builtin-skills.json 加载 (由 scripts/generate-builtin-index.mjs 生成)
+ *
  * @module skill-marketplace/builtin-catalog
  */
 
 import type { SkillPackage } from "./types.js";
+
+// 从生成的 JSON 加载核心内置功能
+// 运行 `node scripts/generate-builtin-index.mjs` 更新
+import builtinSkillsData from "./builtin-skills.json" with { type: "json" };
 
 const OFFICIAL_AUTHOR = {
   name: "OpenClaw Team",
@@ -26,8 +32,73 @@ const DEFAULT_RATING = {
   distribution: [0, 0, 0, 0, 0] as [number, number, number, number, number],
 };
 
+// =============================================================================
+// 核心内置功能 - 与源码绑定的能力
+// =============================================================================
+
 /**
- * 内置技能目录
+ * 核心内置功能定义
+ * 
+ * 这些是源码内置的能力，不需要在技能市场安装，
+ * 但部分功能可能需要配置（如 API Key）才能使用。
+ */
+export type CoreBuiltinFeature = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  /** 功能类型 */
+  type: "channel" | "provider" | "tool";
+  /** 关联的工具/action 名称 */
+  toolNames?: string[];
+  /** 相关文档链接 */
+  docsUrl?: string;
+  /** 是否需要配置才能使用 */
+  requiresConfig?: boolean;
+};
+
+/**
+ * 核心内置工具列表
+ * 
+ * 从 skills-registry/_builtin/ 目录的 skill.json 文件加载
+ * 运行 `node scripts/generate-builtin-index.mjs` 重新生成
+ * 
+ * 注：渠道和模型提供商虽然也是内置的，但需要配置，
+ * 所以它们在 BUILTIN_SKILLS 中定义，不在这里重复。
+ */
+export const CORE_BUILTIN_FEATURES: CoreBuiltinFeature[] = builtinSkillsData.skills.map((s) => ({
+  id: s.id,
+  name: s.name,
+  description: s.description,
+  icon: s.icon,
+  type: s.type as "tool" | "channel" | "provider",
+  toolNames: s.toolNames,
+  docsUrl: s.docsUrl,
+}));
+
+/**
+ * 获取所有核心内置功能
+ */
+export function getCoreBuiltinFeatures(): CoreBuiltinFeature[] {
+  return CORE_BUILTIN_FEATURES;
+}
+
+/**
+ * 根据类型获取核心内置功能
+ */
+export function getCoreBuiltinFeaturesByType(type: CoreBuiltinFeature["type"]): CoreBuiltinFeature[] {
+  return CORE_BUILTIN_FEATURES.filter((f) => f.type === type);
+}
+
+// =============================================================================
+// 可安装技能目录 - 需要检查依赖和安装
+// =============================================================================
+
+/**
+ * 可安装技能目录
+ * 
+ * 这些技能需要额外的依赖（CLI 工具、API Key 等），
+ * 用户需要在技能市场安装和配置。
  */
 export const BUILTIN_SKILLS: SkillPackage[] = [
   // ===========================================================================

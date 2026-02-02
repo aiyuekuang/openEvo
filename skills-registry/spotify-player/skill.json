@@ -1,0 +1,38 @@
+{
+  "name": "spotify-player",
+  "description": "Terminal Spotify playback/search via spogo (preferred) or spotify_player.",
+  "version": "1.0.0",
+  "emoji": "🎵",
+  "homepage": "https://github.com/Rigellute/spotify-tui",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "spt CLI",
+      "description": "检测 spt 是否已安装"
+    },
+    {
+      "id": "auth",
+      "script": "scripts/check-auth.mjs",
+      "label": "登录状态",
+      "description": "检测是否已登录",
+      "dependsOn": [
+        "cli"
+      ]
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 spt",
+      "description": "安装 spt 命令行工具"
+    },
+    "login": {
+      "script": "scripts/login.mjs",
+      "label": "登录",
+      "description": "执行登录认证"
+    }
+  }
+}

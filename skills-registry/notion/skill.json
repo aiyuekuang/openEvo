@@ -1,0 +1,47 @@
+{
+  "name": "notion",
+  "description": "Notion API for creating and managing pages, databases, and blocks.",
+  "version": "1.0.0",
+  "emoji": "📝",
+  "homepage": "https://developers.notion.com/",
+  "category": "integration",
+  "tags": [
+    "笔记",
+    "notion",
+    "数据库"
+  ],
+  "checks": [
+    {
+      "id": "env-api-key",
+      "script": "scripts/check-env.mjs",
+      "label": "Notion API Key",
+      "description": "检测 NOTION_API_KEY 是否已配置",
+      "input": {
+        "key": "NOTION_API_KEY",
+        "type": "password",
+        "placeholder": "secret_..."
+      },
+      "help": {
+        "description": "从 Notion Integrations 页面创建",
+        "url": "https://www.notion.so/my-integrations"
+      }
+    }
+  ],
+  "actions": {
+    "configure": {
+      "script": "scripts/configure.mjs",
+      "label": "配置",
+      "description": "打开配置页面"
+    }
+  },
+  "capabilities": [
+    {
+      "type": "tool",
+      "names": [
+        "notion_search",
+        "notion_create_page",
+        "notion_query_database"
+      ]
+    }
+  ]
+}

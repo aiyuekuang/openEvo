@@ -2,6 +2,7 @@
  * 技能元数据解析器
  *
  * 解析 SKILL.md 文件中的 frontmatter 元数据
+ * 同时支持新的 skill.json 模式
  *
  * @module skill-marketplace/skill-parser
  */
@@ -9,6 +10,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { SkillOpenClawMetadata, SkillConfigField } from "./skill-metadata.js";
+import { getRequirements } from "./skill-metadata.js";
+import {
+  parseSkillDir as parseSkillManifest,
+  manifestToOpenClawMetadata,
+  type ParsedSkill,
+} from "./skill-manifest.js";
 
 // =============================================================================
 // 类型定义
@@ -136,10 +143,22 @@ export function parseSkillFile(filePath: string): ParsedSkillInfo {
 
 /**
  * 从技能目录解析技能信息
+ *
+ * 优先使用 skill.json，如果不存在则回退到 SKILL.md frontmatter
  */
 export function parseSkillDir(skillDir: string): ParsedSkillInfo {
-  const skillMdPath = path.join(skillDir, "SKILL.md");
-  return parseSkillFile(skillMdPath);
+  // 使用新的模块化解析器
+  const parsed = parseSkillManifest(skillDir);
+
+  // 转换为 ParsedSkillInfo 格式
+  return {
+    name: parsed.manifest.name,
+    description: parsed.manifest.description,
+    homepage: parsed.manifest.homepage,
+    openclaw: manifestToOpenClawMetadata(parsed.manifest),
+    content: parsed.content,
+    error: parsed.error,
+  };
 }
 
 // =============================================================================
@@ -147,13 +166,132 @@ export function parseSkillDir(skillDir: string): ParsedSkillInfo {
 // =============================================================================
 
 /**
+ * API Key 帮助信息配置（全局默认值，优先使用 SKILL.md 中的 envHelp）
+ * 根据环境变量名提供获取 API Key 的帮助链接和说明
+ */
+const DEFAULT_API_KEY_HELP: Record<string, { description: string; helpUrl: string }> = {
+  // 搜索
+  BRAVE_SEARCH_API_KEY: {
+    description: '免费注册即可获取，每月2000次免费调用',
+    helpUrl: 'https://brave.com/search/api/',
+  },
+  SERPAPI_API_KEY: {
+    description: 'SerpAPI 搜索 API，支持 Google/Bing/Baidu 等',
+    helpUrl: 'https://serpapi.com/manage-api-key',
+  },
+  GOOGLE_SEARCH_API_KEY: {
+    description: 'Google Custom Search API Key',
+    helpUrl: 'https://developers.google.com/custom-search/v1/introduction',
+  },
+  
+  // 大模型 API
+  OPENAI_API_KEY: {
+    description: 'OpenAI API Key，支持 GPT-4/GPT-3.5',
+    helpUrl: 'https://platform.openai.com/api-keys',
+  },
+  ANTHROPIC_API_KEY: {
+    description: 'Anthropic Claude API Key',
+    helpUrl: 'https://console.anthropic.com/settings/keys',
+  },
+  DEEPSEEK_API_KEY: {
+    description: 'DeepSeek API Key，性价比超高',
+    helpUrl: 'https://platform.deepseek.com/api_keys',
+  },
+  ZHIPU_API_KEY: {
+    description: '智谱 GLM API Key',
+    helpUrl: 'https://open.bigmodel.cn/usercenter/apikeys',
+  },
+  QWEN_API_KEY: {
+    description: '通义千问 API Key',
+    helpUrl: 'https://dashscope.console.aliyun.com/apiKey',
+  },
+  DASHSCOPE_API_KEY: {
+    description: '阿里云百炼 API Key',
+    helpUrl: 'https://dashscope.console.aliyun.com/apiKey',
+  },
+  WENXIN_API_KEY: {
+    description: '文心一言 API Key',
+    helpUrl: 'https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application',
+  },
+  WENXIN_SECRET_KEY: {
+    description: '文心一言 Secret Key',
+    helpUrl: 'https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application',
+  },
+  
+  // 笔记/第三方服务
+  NOTION_API_KEY: {
+    description: 'Notion Integration Token，在 Notion Integrations 创建',
+    helpUrl: 'https://www.notion.so/my-integrations',
+  },
+  GITHUB_TOKEN: {
+    description: 'GitHub Personal Access Token',
+    helpUrl: 'https://github.com/settings/tokens',
+  },
+  SLACK_BOT_TOKEN: {
+    description: 'Slack Bot Token (xoxb-...)',
+    helpUrl: 'https://api.slack.com/apps',
+  },
+  DISCORD_BOT_TOKEN: {
+    description: 'Discord Bot Token',
+    helpUrl: 'https://discord.com/developers/applications',
+  },
+  
+  // 企业微信/钉钉/飞书
+  WECOM_CORPID: {
+    description: '企业微信企业 ID',
+    helpUrl: 'https://work.weixin.qq.com/wework_admin/frame#profile',
+  },
+  WECOM_SECRET: {
+    description: '企业微信应用 Secret',
+    helpUrl: 'https://work.weixin.qq.com/wework_admin/frame#apps',
+  },
+  DINGTALK_APP_KEY: {
+    description: '钉钉应用 AppKey',
+    helpUrl: 'https://open-dev.dingtalk.com/fe/app',
+  },
+  DINGTALK_APP_SECRET: {
+    description: '钉钉应用 AppSecret',
+    helpUrl: 'https://open-dev.dingtalk.com/fe/app',
+  },
+  FEISHU_APP_ID: {
+    description: '飞书应用 App ID',
+    helpUrl: 'https://open.feishu.cn/app',
+  },
+  FEISHU_APP_SECRET: {
+    description: '飞书应用 App Secret',
+    helpUrl: 'https://open.feishu.cn/app',
+  },
+};
+
+/**
+ * 从规范化的 requires 数组中提取环境变量名列表
+ */
+function extractEnvVarsFromRequirements(metadata: SkillOpenClawMetadata): string[] {
+  const requirements = getRequirements(metadata);
+  const envVars: string[] = [];
+  
+  for (const req of requirements) {
+    if (req.type === "env") {
+      envVars.push(req.name);
+    }
+  }
+  
+  return envVars;
+}
+
+/**
  * 根据环境变量名生成配置字段定义
  */
 export function generateConfigFields(metadata: SkillOpenClawMetadata): SkillConfigField[] {
   const fields: SkillConfigField[] = [];
-  const envVars = metadata.requires?.env || [];
+  const requirements = getRequirements(metadata);
 
-  for (const envVar of envVars) {
+  // 从 requires 数组中提取 env 类型的检测项
+  for (const req of requirements) {
+    if (req.type !== "env") continue;
+    
+    const envVar = req.name;
+    
     // 根据命名推断字段类型
     const isApiKey =
       envVar.toLowerCase().includes("api_key") ||
@@ -167,14 +305,19 @@ export function generateConfigFields(metadata: SkillOpenClawMetadata): SkillConf
     const label = envVar
       .replace(/_/g, " ")
       .replace(/API KEY/gi, "API Key")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+      .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+    // 优先使用 RequirementItem 中的信息，其次回退到全局默认值
+    const defaultHelp = DEFAULT_API_KEY_HELP[envVar];
 
     fields.push({
       key: envVar,
       label,
+      description: req.description || defaultHelp?.description,
       type: isApiKey ? "password" : isUrl ? "url" : "text",
       required: true,
-      placeholder: isApiKey ? "输入您的 API Key" : `输入 ${label}`,
+      placeholder: req.placeholder || (isApiKey ? "输入您的 API Key" : `输入 ${label}`),
+      helpUrl: req.helpUrl || defaultHelp?.helpUrl,
     });
   }
 
@@ -183,12 +326,11 @@ export function generateConfigFields(metadata: SkillOpenClawMetadata): SkillConf
 
 /**
  * 获取技能的主要配置项名称
+ * 
+ * 返回 requires 数组中第一个 env 类型的名称
  */
 export function getPrimaryConfigName(metadata: SkillOpenClawMetadata): string | undefined {
-  if (metadata.primaryEnv) {
-    return metadata.primaryEnv;
-  }
-  const envVars = metadata.requires?.env || [];
+  const envVars = extractEnvVarsFromRequirements(metadata);
   return envVars[0];
 }
 

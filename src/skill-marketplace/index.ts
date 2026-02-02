@@ -83,6 +83,22 @@ export type { SkillInstallLogger } from "./install.js";
 // CLI
 export { createSkillCommand, registerSkillCommand } from "./cli.js";
 
+// 技能清单解析
+export {
+  parseSkillJson,
+  parseSkillMdFrontmatter,
+  parseSkillDir as parseSkillDirectory,
+  readSkillContent,
+  isValidSkillDir,
+  scanSkillsDirectory,
+  manifestToOpenClawMetadata,
+  writeSkillJson,
+  SKILL_MANIFEST_FILE,
+  SKILL_MD_FILE,
+} from "./skill-manifest.js";
+
+export type { ParsedSkill } from "./skill-manifest.js";
+
 // API 客户端 (预留)
 export {
   createClientFromRegistry,

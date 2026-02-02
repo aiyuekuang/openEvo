@@ -1,0 +1,24 @@
+{
+  "name": "nano-banana-pro",
+  "description": "Generate or edit images via Gemini 3 Pro Image (Nano Banana Pro).",
+  "version": "1.0.0",
+  "emoji": "🍌",
+  "homepage": "https://pypi.org/project/nano-banana-pro/",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "nano-banana-pro CLI",
+      "description": "检测 nano-banana-pro 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 nano-banana-pro",
+      "description": "安装 nano-banana-pro 命令行工具"
+    }
+  }
+}

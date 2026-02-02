@@ -6,6 +6,7 @@
  * - 企业微信 (WeCom)
  * - 钉钉 (DingTalk)
  * - 飞书 (Feishu/Lark)
+ * - QQ 官方机器人 (QQBot)
  *
  * 配置示例 (CLI):
  *
@@ -35,6 +36,14 @@
  *   "encodingAesKey": "callback-aes-key"
  * }' --json
  *
+ * # QQ 官方机器人配置
+ * openclaw config set channels.qqbot '{
+ *   "enabled": true,
+ *   "appId": "102012345",
+ *   "appSecret": "your-app-secret",
+ *   "sandbox": false
+ * }' --json
+ *
  * 更多配置选项请查看 ~/.openclaw/openclaw.json
  */
 
@@ -42,6 +51,7 @@ import type { OpenClawPluginApi } from "../plugins/types.js";
 import { wecomPlugin } from "../wecom/plugin.js";
 import { dingtalkPlugin } from "../dingtalk/plugin.js";
 import { feishuPlugin } from "../feishu/plugin.js";
+import { qqbotPlugin } from "../qqbot/plugin.js";
 
 /**
  * 注册所有中国渠道插件
@@ -61,6 +71,11 @@ export function registerChineseChannels(api: OpenClawPluginApi): void {
   api.registerChannel({
     plugin: feishuPlugin,
   });
+
+  // QQ 官方机器人
+  api.registerChannel({
+    plugin: qqbotPlugin,
+  });
 }
 
 /**
@@ -70,7 +85,7 @@ export default {
   id: "openclaw-cn-channels",
   name: "OpenClaw CN Channels",
   version: "0.1.0",
-  description: "中国本地化消息渠道 (企业微信/钉钉/飞书)",
+  description: "中国本地化消息渠道 (企业微信/钉钉/飞书/QQ机器人)",
   register: registerChineseChannels,
 };
 
@@ -80,3 +95,4 @@ export default {
 export { wecomPlugin } from "../wecom/plugin.js";
 export { dingtalkPlugin } from "../dingtalk/plugin.js";
 export { feishuPlugin } from "../feishu/plugin.js";
+export { qqbotPlugin } from "../qqbot/plugin.js";

@@ -1,0 +1,24 @@
+{
+  "name": "peekaboo",
+  "description": "Capture and automate macOS UI with the Peekaboo CLI.",
+  "version": "1.0.0",
+  "emoji": "👀",
+  "homepage": "https://github.com/steventroughtonsmith/peekaboo",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "peekaboo CLI",
+      "description": "检测 peekaboo 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 peekaboo",
+      "description": "安装 peekaboo 命令行工具"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "nodes-notify",
+  "displayName": "系统通知",
+  "description": "发送系统通知到设备",
+  "version": "1.0.0",
+  "emoji": "🔔",
+  "category": "tool",
+  "tags": ["通知", "notify", "notification"],
+  "builtin": true,
+  "tools": ["nodes:notify"],
+  "platforms": ["darwin", "linux", "win32"]
+}

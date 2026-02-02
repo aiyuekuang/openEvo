@@ -2,6 +2,7 @@
 name: skill-creator
 description: Create or update AgentSkills. Use when designing, structuring, or packaging skills with scripts, references, and assets.
 ---
+metadata: {"openclaw":{"emoji":"🛠️"}}
 
 # Skill Creator
 

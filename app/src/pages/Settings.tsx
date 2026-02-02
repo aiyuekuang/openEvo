@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { 
-  Form, 
-  Input, 
-  Select, 
-  Button, 
-  message, 
+import {
+  Form,
+  Input,
+  Select,
+  Button,
+  message,
   Spin,
   Modal,
   Drawer,
   Typography,
+  Card,
 } from 'antd';
 import { 
   KeyOutlined, 
@@ -411,7 +412,10 @@ export default function Settings() {
         padding: '16px 0',
         borderBottom: '1px solid #f5f5f5',
         cursor: 'pointer',
+        transition: 'background 0.2s ease',
       }}
+      onMouseEnter={(e) => e.currentTarget.style.background = '#fafafa'}
+      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
     >
       <div style={{
         width: 40,
@@ -455,38 +459,47 @@ export default function Settings() {
   const configuredInternational = INTERNATIONAL_MODELS.filter(def => isModelConfigured(def));
 
   return (
-    <div style={{ height: '100%', background: '#f5f5f5', overflow: 'auto' }}>
+    <div style={{ height: '100%', background: 'var(--bg-base)', overflow: 'auto', padding: 24 }}>
+      {/* 页面标题 */}
+      <div style={{ marginBottom: 24 }}>
+        <Text style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)' }}>设置</Text>
+        <Text type="secondary" style={{ display: 'block', marginTop: 4, fontSize: 14 }}>
+          管理模型、渠道和系统配置
+        </Text>
+      </div>
+
       {/* 模型配置 */}
-      <div style={{ background: '#fff', marginBottom: 12 }}>
-        <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: '#999' }}>模型配置</span>
-          {unconfiguredModels.length > 0 && (
-            <Select
-              placeholder="新增模型"
-              size="small"
-              style={{ width: 150 }}
-              value={undefined}
-              suffixIcon={<PlusOutlined style={{ fontSize: 10 }} />}
-              onChange={(value) => {
-                const def = MODEL_DEFS.find(d => d.key === value);
-                if (def) openModelModal(def);
-              }}
-              options={[
-                {
-                  label: '🇨🇳 国产模型',
-                  options: unconfiguredDomestic.map(def => ({ value: def.key, label: def.label })),
-                },
-                {
-                  label: '🌍 国际模型',
-                  options: unconfiguredInternational.map(def => ({ value: def.key, label: def.label })),
-                },
-              ].filter(group => group.options.length > 0)}
-            />
-          )}
-        </div>
-        <div style={{ padding: '0 16px' }}>
+      <Card
+        title={<span style={{ fontWeight: 500 }}>模型配置</span>}
+        extra={unconfiguredModels.length > 0 && (
+          <Select
+            placeholder="新增模型"
+            size="small"
+            style={{ width: 150 }}
+            value={undefined}
+            suffixIcon={<PlusOutlined style={{ fontSize: 10 }} />}
+            onChange={(value) => {
+              const def = MODEL_DEFS.find(d => d.key === value);
+              if (def) openModelModal(def);
+            }}
+            options={[
+              {
+                label: '🇨🇳 国产模型',
+                options: unconfiguredDomestic.map(def => ({ value: def.key, label: def.label })),
+              },
+              {
+                label: '🌍 国际模型',
+                options: unconfiguredInternational.map(def => ({ value: def.key, label: def.label })),
+              },
+            ].filter(group => group.options.length > 0)}
+          />
+        )}
+        style={{ marginBottom: 16, borderRadius: 12 }}
+        styles={{ body: { padding: configuredModels.length === 0 ? 24 : '0 16px' } }}
+      >
+        <div>
           {configuredModels.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#999', fontSize: 13 }}>
+            <div style={{ textAlign: 'center', color: '#999', fontSize: 13 }}>
               点击右上角新增模型
             </div>
           ) : (
@@ -526,83 +539,86 @@ export default function Settings() {
             </>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* 渠道配置 */}
-      <div style={{ background: '#fff', marginBottom: 12 }}>
-        <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: '#999' }}>消息渠道</span>
-          {unconfiguredChannels.length > 0 && (
-            <Select
-              placeholder="新增"
-              size="small"
-              style={{ width: 100 }}
-              value={undefined}
-              suffixIcon={<PlusOutlined style={{ fontSize: 10 }} />}
-              onChange={(value) => {
-                const def = CHANNEL_DEFS.find(d => d.key === value);
-                if (def) openChannelModal(def);
-              }}
-              options={unconfiguredChannels.map(def => ({ value: def.key, label: def.label }))}
-            />
-          )}
-        </div>
-        <div style={{ padding: '0 16px' }}>
-          {configuredChannels.length === 0 ? (
-            <div style={{ padding: '32px 0', textAlign: 'center', color: '#999', fontSize: 13 }}>
-              暂无已配置的渠道
+      <Card
+        title={<span style={{ fontWeight: 500 }}>消息渠道</span>}
+        extra={unconfiguredChannels.length > 0 && (
+          <Select
+            placeholder="新增"
+            size="small"
+            style={{ width: 120 }}
+            value={undefined}
+            suffixIcon={<PlusOutlined style={{ fontSize: 10 }} />}
+            onChange={(value) => {
+              const def = CHANNEL_DEFS.find(d => d.key === value);
+              if (def) openChannelModal(def);
+            }}
+            options={unconfiguredChannels.map(def => ({ value: def.key, label: def.label }))}
+          />
+        )}
+        style={{ marginBottom: 16, borderRadius: 12 }}
+        styles={{ body: { padding: configuredChannels.length === 0 ? 24 : '0 16px' } }}
+      >
+        {configuredChannels.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#999', fontSize: 13 }}>
+            暂无已配置的渠道
+          </div>
+        ) : (
+          configuredChannels.map(def => (
+            <div key={def.key}>
+              {renderListItem(
+                def.icon,
+                def.label,
+                getChannelSummary(def.key) || '已配置',
+                () => openChannelModal(def)
+              )}
             </div>
-          ) : (
-            configuredChannels.map(def => (
-              <div key={def.key}>
-                {renderListItem(
-                  def.icon,
-                  def.label,
-                  getChannelSummary(def.key) || '已配置',
-                  () => openChannelModal(def)
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+          ))
+        )}
+      </Card>
 
       {/* 网关配置 */}
-      <div style={{ background: '#fff', marginBottom: 12 }}>
-        <div style={{ padding: '12px 16px' }}>
-          <span style={{ fontSize: 13, color: '#999' }}>网关配置</span>
-        </div>
-        <Form form={form} layout="vertical" style={{ padding: '0 16px 16px' }}>
-          <Form.Item name="gatewayPort" label="端口" style={{ marginBottom: 12 }}>
-            <Input placeholder="18789" style={{ height: 40 }} />
+      <Card
+        title={<span style={{ fontWeight: 500 }}>网关配置</span>}
+        style={{ marginBottom: 16, borderRadius: 12 }}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="gatewayPort" label="端口" style={{ marginBottom: 16 }}>
+            <Input placeholder="18789" style={{ height: 40, borderRadius: 8 }} />
           </Form.Item>
           <Form.Item name="gatewayToken" label="Token" style={{ marginBottom: 0 }}>
-            <Password placeholder="认证 Token" style={{ height: 40 }} />
+            <Password placeholder="认证 Token" style={{ height: 40, borderRadius: 8 }} />
           </Form.Item>
         </Form>
-      </div>
+      </Card>
 
       {/* 界面配置 */}
-      <div style={{ background: '#fff', marginBottom: 12 }}>
-        <div style={{ padding: '12px 16px' }}>
-          <span style={{ fontSize: 13, color: '#999' }}>界面配置</span>
-        </div>
-        <Form form={form} layout="vertical" style={{ padding: '0 16px 16px' }}>
-          <Form.Item name="assistantName" label="助手名称" style={{ marginBottom: 12 }}>
-            <Input placeholder="AI 助手" style={{ height: 40 }} />
+      <Card
+        title={<span style={{ fontWeight: 500 }}>界面配置</span>}
+        style={{ marginBottom: 24, borderRadius: 12 }}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="assistantName" label="助手名称" style={{ marginBottom: 16 }}>
+            <Input placeholder="AI 助手" style={{ height: 40, borderRadius: 8 }} />
           </Form.Item>
           <Form.Item name="assistantAvatar" label="头像 URL" style={{ marginBottom: 0 }}>
-            <Input placeholder="https://..." style={{ height: 40 }} />
+            <Input placeholder="https://..." style={{ height: 40, borderRadius: 8 }} />
           </Form.Item>
         </Form>
-      </div>
+      </Card>
 
       {/* 保存按钮 */}
-      <div style={{ padding: '16px' }}>
-        <Button type="primary" block onClick={handleSave} loading={saving} style={{ height: 44 }}>
-          保存配置
-        </Button>
-      </div>
+      <Button
+        type="primary"
+        block
+        onClick={handleSave}
+        loading={saving}
+        style={{ height: 48, borderRadius: 10, fontWeight: 500, fontSize: 15 }}
+      >
+        保存配置
+      </Button>
 
       {/* 模型配置弹窗 */}
       <Modal

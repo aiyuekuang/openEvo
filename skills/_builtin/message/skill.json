@@ -1,0 +1,12 @@
+{
+  "name": "message",
+  "displayName": "消息发送",
+  "description": "跨渠道发送消息",
+  "version": "1.0.0",
+  "emoji": "✉️",
+  "category": "tool",
+  "tags": ["消息", "message", "发送", "send"],
+  "builtin": true,
+  "tools": ["message"],
+  "platforms": ["darwin", "linux", "win32"]
+}

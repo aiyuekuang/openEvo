@@ -46,13 +46,29 @@ function App() {
         setGatewayToken(token);
       }
 
-      // 连接 Gateway
-      try {
-        const client = getGatewayClient(gatewayPort, token || undefined);
-        await client.connect();
-        const config = await client.getConfig();
-        loadFromConfig(config as Record<string, unknown>);
-      } catch {
+      // 检查 Gateway 是否已启动
+      let gatewayRunning = false;
+      if (window.electronAPI?.gateway?.status) {
+        try {
+          const status = await window.electronAPI.gateway.status();
+          gatewayRunning = status === 'running';
+        } catch {
+          // ignore
+        }
+      }
+
+      // 只有 Gateway 运行中才尝试连接
+      if (gatewayRunning) {
+        try {
+          const client = getGatewayClient(gatewayPort, token || undefined);
+          await client.connect();
+          const config = await client.getConfig();
+          loadFromConfig(config as Record<string, unknown>);
+        } catch {
+          setLoading(false);
+        }
+      } else {
+        // Gateway 未启动，直接结束加载
         setLoading(false);
       }
     };

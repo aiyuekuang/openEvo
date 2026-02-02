@@ -1,0 +1,24 @@
+{
+  "name": "wacli",
+  "description": "Send WhatsApp messages to other people or search/sync WhatsApp history via the wacli CLI (not for normal user chats).",
+  "version": "1.0.0",
+  "emoji": "📱",
+  "homepage": "https://wacli.sh",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "wacli CLI",
+      "description": "检测 wacli 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 wacli",
+      "description": "安装 wacli 命令行工具"
+    }
+  }
+}

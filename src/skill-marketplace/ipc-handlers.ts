@@ -9,6 +9,7 @@
 import { ipcMain } from "electron";
 import * as path from "node:path";
 import { parseSkillDir, generateConfigFields, scanSkillsDir } from "./skill-parser.js";
+import { parseSkillJson, manifestToOpenClawMetadata } from "./skill-manifest.js";
 import { checkDependencies } from "./dependency-checker.js";
 import {
   getSkillConfig,
@@ -53,28 +54,73 @@ export const IPC_CHANNELS = {
 // =============================================================================
 
 /**
+ * 从 skillId 提取目录名
+ * 支持 "@openclaw/github" -> "github" 或直接 "github"
+ */
+function getSkillDirName(skillId: string): string {
+  if (skillId.startsWith("@openclaw/")) {
+    return skillId.replace("@openclaw/", "");
+  }
+  return skillId;
+}
+
+/**
+ * 从 skill.json 读取技能元数据
+ */
+function getSkillMetadata(skillsDir: string, skillId: string): SkillOpenClawMetadata | undefined {
+  const dirName = getSkillDirName(skillId);
+  const skillDir = path.join(skillsDir, dirName);
+  const manifest = parseSkillJson(skillDir);
+  if (manifest) {
+    return manifestToOpenClawMetadata(manifest);
+  }
+  // 回退到 SKILL.md
+  const info = parseSkillDir(skillDir);
+  return info.openclaw;
+}
+
+/**
  * 注册所有技能市场 IPC 处理器
  */
 export function registerSkillMarketplaceHandlers(skillsDir: string): void {
-  // 获取技能状态
-  ipcMain.handle(IPC_CHANNELS.GET_SKILL_STATUS, async (_event, skillId: string, metadata?: SkillOpenClawMetadata) => {
+  // 获取技能状态 (自动从 skill.json 读取 metadata)
+  ipcMain.handle(IPC_CHANNELS.GET_SKILL_STATUS, async (_event, skillId: string) => {
     try {
+      const metadata = getSkillMetadata(skillsDir, skillId);
       return computeSkillStatus(skillId, metadata);
     } catch (error) {
-      return { status: "error", error: String(error) } as SkillStatusInfo;
+      return { 
+        status: "error", 
+        installed: false, 
+        enabled: false,
+        error: { code: "UNKNOWN", message: String(error) } 
+      } as SkillStatusInfo;
     }
   });
 
-  // 获取所有技能状态
+  // 获取所有技能状态 (支持传入 skillIds 数组或 {id, metadata}[] 对象)
   ipcMain.handle(
     IPC_CHANNELS.GET_ALL_SKILLS_STATUS,
-    async (_event, skills: { id: string; metadata?: SkillOpenClawMetadata }[]) => {
+    async (_event, skillsOrIds: string[] | { id: string; metadata?: SkillOpenClawMetadata }[]) => {
       const results: Record<string, SkillStatusInfo> = {};
-      for (const skill of skills) {
+      
+      // 兼容两种格式: string[] 或 { id, metadata }[]
+      const skillIds = Array.isArray(skillsOrIds) 
+        ? skillsOrIds.map(s => typeof s === 'string' ? s : s.id)
+        : [];
+      
+      for (const skillId of skillIds) {
         try {
-          results[skill.id] = computeSkillStatus(skill.id, skill.metadata);
+          // 从 skill.json 读取 metadata
+          const metadata = getSkillMetadata(skillsDir, skillId);
+          results[skillId] = computeSkillStatus(skillId, metadata);
         } catch (error) {
-          results[skill.id] = { status: "error", error: String(error) };
+          results[skillId] = { 
+            status: "error", 
+            installed: false, 
+            enabled: false,
+            error: { code: "UNKNOWN", message: String(error) } 
+          };
         }
       }
       return results;

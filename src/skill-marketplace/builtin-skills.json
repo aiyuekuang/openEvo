@@ -1,0 +1,284 @@
+{
+  "$schema": "./builtin-skills.schema.json",
+  "generatedAt": "2026-02-02T11:56:47.421Z",
+  "count": 12,
+  "skills": [
+    {
+      "id": "cron",
+      "name": "定时任务",
+      "description": "创建和管理定时任务、提醒",
+      "icon": "⏰",
+      "type": "tool",
+      "toolNames": [
+        "cron"
+      ],
+      "tags": [
+        "定时",
+        "cron",
+        "提醒",
+        "reminder",
+        "schedule"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/cron"
+    },
+    {
+      "id": "sessions",
+      "name": "会话管理",
+      "description": "管理子代理会话",
+      "icon": "🔄",
+      "type": "tool",
+      "toolNames": [
+        "sessions_list",
+        "sessions_history",
+        "sessions_send",
+        "sessions_spawn"
+      ],
+      "tags": [
+        "会话",
+        "session",
+        "agent",
+        "子代理"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/sessions"
+    },
+    {
+      "id": "browser",
+      "name": "浏览器控制",
+      "description": "控制浏览器进行网页操作、截图、表单填写",
+      "icon": "🌐",
+      "type": "tool",
+      "toolNames": [
+        "browser"
+      ],
+      "tags": [
+        "浏览器",
+        "browser",
+        "web",
+        "网页"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/browser"
+    },
+    {
+      "id": "exec",
+      "name": "命令执行",
+      "description": "执行 Shell 命令",
+      "icon": "💻",
+      "type": "tool",
+      "toolNames": [
+        "exec",
+        "process"
+      ],
+      "tags": [
+        "命令",
+        "shell",
+        "terminal",
+        "exec"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/exec"
+    },
+    {
+      "id": "nodes-screen",
+      "name": "屏幕录制",
+      "description": "录制屏幕视频",
+      "icon": "🖥️",
+      "type": "tool",
+      "toolNames": [
+        "nodes:screen_record"
+      ],
+      "tags": [
+        "屏幕",
+        "screen",
+        "录制",
+        "record"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/nodes-screen"
+    },
+    {
+      "id": "nodes-camera",
+      "name": "摄像头拍照",
+      "description": "使用设备摄像头拍照，macOS 自动回退到 imagesnap",
+      "icon": "📷",
+      "type": "tool",
+      "toolNames": [
+        "nodes:camera_snap",
+        "nodes:camera_list",
+        "nodes:camera_clip"
+      ],
+      "tags": [
+        "摄像头",
+        "camera",
+        "拍照",
+        "photo"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/nodes-camera"
+    },
+    {
+      "id": "web",
+      "name": "网络访问",
+      "description": "搜索和获取网页内容",
+      "icon": "🔍",
+      "type": "tool",
+      "toolNames": [
+        "web_search",
+        "web_fetch"
+      ],
+      "tags": [
+        "搜索",
+        "search",
+        "web",
+        "网页",
+        "fetch"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/web"
+    },
+    {
+      "id": "nodes-location",
+      "name": "位置获取",
+      "description": "获取设备当前位置",
+      "icon": "📍",
+      "type": "tool",
+      "toolNames": [
+        "nodes:location_get"
+      ],
+      "tags": [
+        "位置",
+        "location",
+        "gps"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/nodes-location"
+    },
+    {
+      "id": "file",
+      "name": "文件操作",
+      "description": "读写、编辑、搜索文件",
+      "icon": "📁",
+      "type": "tool",
+      "toolNames": [
+        "read",
+        "write",
+        "edit",
+        "ls",
+        "find",
+        "grep"
+      ],
+      "tags": [
+        "文件",
+        "file",
+        "read",
+        "write",
+        "edit"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/file"
+    },
+    {
+      "id": "nodes-notify",
+      "name": "系统通知",
+      "description": "发送系统通知到设备",
+      "icon": "🔔",
+      "type": "tool",
+      "toolNames": [
+        "nodes:notify"
+      ],
+      "tags": [
+        "通知",
+        "notify",
+        "notification"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/nodes-notify"
+    },
+    {
+      "id": "message",
+      "name": "消息发送",
+      "description": "跨渠道发送消息",
+      "icon": "✉️",
+      "type": "tool",
+      "toolNames": [
+        "message"
+      ],
+      "tags": [
+        "消息",
+        "message",
+        "发送",
+        "send"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/message"
+    },
+    {
+      "id": "canvas",
+      "name": "Canvas 画布",
+      "description": "在客户端显示 HTML/Web 内容",
+      "icon": "🎨",
+      "type": "tool",
+      "toolNames": [
+        "canvas"
+      ],
+      "tags": [
+        "canvas",
+        "画布",
+        "html",
+        "显示"
+      ],
+      "platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "docsUrl": "https://openclaw.cn/docs/tools/canvas"
+    }
+  ]
+}

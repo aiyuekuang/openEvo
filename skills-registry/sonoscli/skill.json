@@ -1,0 +1,24 @@
+{
+  "name": "sonoscli",
+  "description": "Control Sonos speakers (discover/status/play/volume/group).",
+  "version": "1.0.0",
+  "emoji": "🔊",
+  "homepage": "https://github.com/example/sonoscli",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "sonos CLI",
+      "description": "检测 sonos 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 sonos",
+      "description": "安装 sonos 命令行工具"
+    }
+  }
+}

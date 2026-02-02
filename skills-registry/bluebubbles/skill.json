@@ -1,0 +1,22 @@
+{
+  "name": "bluebubbles",
+  "description": "Build or update the BlueBubbles external channel plugin for OpenClaw (extension package, REST send/probe, webhook inbound).",
+  "version": "1.0.0",
+  "emoji": "💬",
+  "homepage": "https://bluebubbles.app/",
+  "category": "channel",
+  "tags": [
+    "imessage",
+    "bluebubbles",
+    "plugin"
+  ],
+  "checks": [
+    {
+      "id": "channel",
+      "script": "scripts/check-channel.mjs",
+      "label": "BlueBubbles 渠道",
+      "description": "检测 channels.bluebubbles 渠道配置"
+    }
+  ],
+  "actions": {}
+}

@@ -1,0 +1,12 @@
+{
+  "name": "nodes-camera",
+  "displayName": "摄像头拍照",
+  "description": "使用设备摄像头拍照，macOS 自动回退到 imagesnap",
+  "version": "1.0.0",
+  "emoji": "📷",
+  "category": "tool",
+  "tags": ["摄像头", "camera", "拍照", "photo"],
+  "builtin": true,
+  "tools": ["nodes:camera_snap", "nodes:camera_list", "nodes:camera_clip"],
+  "platforms": ["darwin", "linux", "win32"]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "nodes-screen",
+  "displayName": "屏幕录制",
+  "description": "录制屏幕视频",
+  "version": "1.0.0",
+  "emoji": "🖥️",
+  "category": "tool",
+  "tags": ["屏幕", "screen", "录制", "record"],
+  "builtin": true,
+  "tools": ["nodes:screen_record"],
+  "platforms": ["darwin", "linux", "win32"]
+}

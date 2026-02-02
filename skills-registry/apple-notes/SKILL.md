@@ -2,17 +2,23 @@
 name: apple-notes
 description: Manage Apple Notes via the `memo` CLI on macOS (create, view, edit, delete, search, move, and export notes). Use when a user asks OpenClaw to add a note, list notes, search notes, or manage note folders.
 homepage: https://github.com/antoniorodr/memo
-metadata: {"openclaw":{"emoji":"📝","os":["darwin"],"requires":{"bins":["memo"]},"install":[{"id":"brew","kind":"brew","formula":"antoniorodr/memo/memo","bins":["memo"],"label":"Install memo via Homebrew"}]}}
+metadata:
 ---
 
 # Apple Notes CLI
 
 Use `memo notes` to manage Apple Notes directly from the terminal. Create, view, edit, delete, search, move notes between folders, and export to HTML/Markdown.
 
-Setup
-- Install (Homebrew): `brew tap antoniorodr/memo && brew install antoniorodr/memo/memo`
-- Manual (pip): `pip install .` (after cloning the repo)
-- macOS-only; if prompted, grant Automation access to Notes.app.
+## ⚠️ 首次使用前必须配置权限
+
+此技能使用 AppleScript 操作 Apple Notes，需要授权自动化权限：
+
+1. 首次运行 `memo` 命令时，macOS 会弹出权限请求对话框，点击「好」
+2. 如果错过了弹窗，手动授权：**系统设置 > 隐私与安全性 > 自动化** > 为你的终端应用勾选「Notes」
+
+## 安装
+- Homebrew: `brew tap antoniorodr/memo && brew install antoniorodr/memo/memo`
+- pip: `pip install .` (克隆仓库后)
 
 View Notes
 - List all notes: `memo notes`

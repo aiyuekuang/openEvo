@@ -1,0 +1,38 @@
+{
+  "name": "gog",
+  "description": "Google Workspace CLI for Gmail, Calendar, Drive, Contacts, Sheets, and Docs.",
+  "version": "1.0.0",
+  "emoji": "🎮",
+  "homepage": "https://github.com/Aternus/gogdl-ng",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "gogcli CLI",
+      "description": "检测 gogcli 是否已安装"
+    },
+    {
+      "id": "auth",
+      "script": "scripts/check-auth.mjs",
+      "label": "登录状态",
+      "description": "检测是否已登录",
+      "dependsOn": [
+        "cli"
+      ]
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 gogcli",
+      "description": "安装 gogcli 命令行工具"
+    },
+    "login": {
+      "script": "scripts/login.mjs",
+      "label": "登录",
+      "description": "执行登录认证"
+    }
+  }
+}

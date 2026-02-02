@@ -1,0 +1,37 @@
+{
+  "name": "canvas",
+  "description": "Display HTML content on connected OpenClaw nodes (Mac app, iOS, Android). Use for games, visualizations, dashboards, and interactive demos.",
+  "version": "1.0.0",
+  "emoji": "🎨",
+  "homepage": "https://canvas.instructure.com/doc/api/",
+  "category": "tool",
+  "tags": [
+    "canvas",
+    "html",
+    "visualization"
+  ],
+  "checks": [
+    {
+      "id": "env-api-token",
+      "script": "scripts/check-env.mjs",
+      "label": "Canvas API Token",
+      "description": "检测 CANVAS_API_TOKEN 是否已配置",
+      "input": {
+        "key": "CANVAS_API_TOKEN",
+        "type": "password",
+        "placeholder": "..."
+      },
+      "help": {
+        "description": "从 Canvas 账户设置中获取",
+        "url": "https://canvas.instructure.com/profile/settings"
+      }
+    }
+  ],
+  "actions": {
+    "configure": {
+      "script": "scripts/configure.mjs",
+      "label": "配置",
+      "description": "打开配置页面"
+    }
+  }
+}

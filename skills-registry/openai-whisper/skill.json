@@ -1,0 +1,24 @@
+{
+  "name": "openai-whisper",
+  "description": "Local speech-to-text with the Whisper CLI (no API key).",
+  "version": "1.0.0",
+  "emoji": "🎙️",
+  "homepage": "https://github.com/openai/whisper",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "whisper CLI",
+      "description": "检测 whisper 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 whisper",
+      "description": "安装 whisper 命令行工具"
+    }
+  }
+}

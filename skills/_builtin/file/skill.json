@@ -1,0 +1,12 @@
+{
+  "name": "file",
+  "displayName": "文件操作",
+  "description": "读写、编辑、搜索文件",
+  "version": "1.0.0",
+  "emoji": "📁",
+  "category": "tool",
+  "tags": ["文件", "file", "read", "write", "edit"],
+  "builtin": true,
+  "tools": ["read", "write", "edit", "ls", "find", "grep"],
+  "platforms": ["darwin", "linux", "win32"]
+}

@@ -200,14 +200,15 @@ export default function Dashboard() {
       </div>
 
       {/* 服务状态卡片 */}
-      <Card 
-        style={{ 
-          marginBottom: 24, 
+      <Card
+        style={{
+          marginBottom: 24,
           borderRadius: 16,
-          background: gatewayStatus === 'running' 
-            ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.02) 100%)' 
+          background: gatewayStatus === 'running'
+            ? 'linear-gradient(135deg, var(--status-running-bg) 0%, rgba(34, 197, 94, 0.02) 100%)'
             : 'white',
-          borderColor: gatewayStatus === 'running' ? 'rgba(34, 197, 94, 0.3)' : undefined,
+          borderColor: gatewayStatus === 'running' ? 'var(--status-running)' : undefined,
+          borderWidth: gatewayStatus === 'running' ? 1 : undefined,
         }}
       >
         <Row gutter={24} align="middle">
@@ -369,11 +370,11 @@ export default function Dashboard() {
 
       {/* 快速操作提示 */}
       {gatewayStatus === 'running' && channelStatus === 'connected' && (
-        <Card 
-          style={{ 
-            marginTop: 24, 
-            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.04) 100%)', 
-            borderColor: 'rgba(34, 197, 94, 0.3)',
+        <Card
+          style={{
+            marginTop: 24,
+            background: 'linear-gradient(135deg, var(--status-running-bg) 0%, rgba(34, 197, 94, 0.04) 100%)',
+            borderColor: 'var(--status-running)',
             borderRadius: 14,
           }}
           className="animate-fade-in"
@@ -383,15 +384,15 @@ export default function Dashboard() {
               width: 40,
               height: 40,
               borderRadius: 10,
-              background: 'rgba(34, 197, 94, 0.15)',
+              background: 'var(--status-running-bg)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <CheckCircleOutlined style={{ color: '#16a34a', fontSize: 22 }} />
+              <CheckCircleOutlined style={{ color: 'var(--status-running)', fontSize: 22 }} />
             </div>
             <div>
-              <Text strong style={{ color: '#16a34a', fontSize: 15 }}>🎉 服务运行正常</Text>
+              <Text strong style={{ color: 'var(--status-running)', fontSize: 15 }}>服务运行正常</Text>
               <br />
               <Text style={{ color: '#64748b', fontSize: 14, marginTop: 4, display: 'block' }}>
                 您现在可以通过 <Text strong>{CHANNEL_LABELS[channelConfig?.type || '']}</Text> 与 AI 助手对话了

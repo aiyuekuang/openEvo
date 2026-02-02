@@ -11,11 +11,6 @@ import { requireActivePluginRegistry } from "../../plugins/runtime.js";
 // Channel plugins are registered by the plugin loader (extensions/ or configured paths).
 function listPluginChannels(): ChannelPlugin[] {
   const registry = requireActivePluginRegistry();
-  console.log(`[listPluginChannels] registry.channels.length = ${registry.channels.length}`);
-  console.log(`[listPluginChannels] registry.plugins.length = ${registry.plugins.length}`);
-  if (registry.plugins.length > 0) {
-    console.log(`[listPluginChannels] plugins:`, registry.plugins.map(p => ({ id: p.id, status: p.status, channelIds: p.channelIds })));
-  }
   return registry.channels.map((entry) => entry.plugin);
 }
 

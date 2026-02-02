@@ -1,0 +1,24 @@
+{
+  "name": "blucli",
+  "description": "BluOS CLI (blu) for discovery, playback, grouping, and volume.",
+  "version": "1.0.0",
+  "emoji": "🫐",
+  "homepage": "https://github.com/example/blucli",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "blucli CLI",
+      "description": "检测 blucli 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 blucli",
+      "description": "安装 blucli 命令行工具"
+    }
+  }
+}

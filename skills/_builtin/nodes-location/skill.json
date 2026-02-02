@@ -1,0 +1,12 @@
+{
+  "name": "nodes-location",
+  "displayName": "位置获取",
+  "description": "获取设备当前位置",
+  "version": "1.0.0",
+  "emoji": "📍",
+  "category": "tool",
+  "tags": ["位置", "location", "gps"],
+  "builtin": true,
+  "tools": ["nodes:location_get"],
+  "platforms": ["darwin", "linux", "win32"]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "skill-creator",
+  "description": "Create or update AgentSkills. Use when designing, structuring, or packaging skills with scripts, references, and assets.",
+  "version": "1.0.0",
+  "emoji": "🛠️",
+  "homepage": "https://github.com/anthropics/anthropic-quickstarts",
+  "category": "development",
+  "tags": [
+    "skill",
+    "creator",
+    "development"
+  ],
+  "checks": [
+    {
+      "id": "ready",
+      "script": "scripts/check-ready.mjs",
+      "label": "就绪",
+      "description": "此技能无需额外配置"
+    }
+  ],
+  "actions": {}
+}

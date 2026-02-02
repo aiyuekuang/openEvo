@@ -1,65 +1,76 @@
 import { useState } from 'react';
 import { Card, Steps, Button, Form, Input, Space, Typography, message, Row, Col } from 'antd';
-import { 
-  RobotOutlined, 
-  MessageOutlined, 
+import {
+  RobotOutlined,
+  MessageOutlined,
   RocketOutlined,
   CheckCircleOutlined,
   DingdingOutlined,
   LinkOutlined,
+  ApiOutlined,
+  SearchOutlined,
+  CloudOutlined,
+  BulbOutlined,
 } from '@ant-design/icons';
 import { useAppStore, ModelProvider, ChannelType } from '../stores/app';
 import { getGatewayClient } from '../api/gateway';
 
 const { Title, Text, Paragraph } = Typography;
 
-const MODEL_PROVIDERS: { value: ModelProvider; label: string; icon: string; fields: string[]; apiKeyUrl?: string }[] = [
-  { 
-    value: 'anthropic', 
-    label: 'Anthropic (Claude)', 
-    icon: '🧠',
+const MODEL_PROVIDERS: { value: ModelProvider; label: string; icon: React.ReactNode; color: string; fields: string[]; apiKeyUrl?: string }[] = [
+  {
+    value: 'anthropic',
+    label: 'Anthropic (Claude)',
+    icon: <ApiOutlined />,
+    color: '#d97757',
     fields: ['apiKey'],
     apiKeyUrl: 'https://console.anthropic.com/settings/api-keys'
   },
-  { 
-    value: 'openai', 
-    label: 'OpenAI (GPT-4)', 
-    icon: '🤖',
+  {
+    value: 'openai',
+    label: 'OpenAI (GPT-4)',
+    icon: <RobotOutlined />,
+    color: '#10a37f',
     fields: ['apiKey', 'baseUrl'],
     apiKeyUrl: 'https://platform.openai.com/api-keys'
   },
-  { 
-    value: 'deepseek', 
-    label: 'DeepSeek', 
-    icon: '🔍',
+  {
+    value: 'deepseek',
+    label: 'DeepSeek',
+    icon: <SearchOutlined />,
+    color: '#10b981',
     fields: ['apiKey'],
     apiKeyUrl: 'https://platform.deepseek.com/api-keys'
   },
-  { 
-    value: 'qwen', 
-    label: '通义千问', 
-    icon: '☁️',
+  {
+    value: 'qwen',
+    label: '通义千问',
+    icon: <CloudOutlined />,
+    color: '#ff6a00',
     fields: ['apiKey'],
     apiKeyUrl: 'https://dashscope.console.aliyun.com/apiKey'
   },
-  { 
-    value: 'zhipu', 
-    label: '智谱 GLM', 
-    icon: '💡',
+  {
+    value: 'zhipu',
+    label: '智谱 GLM',
+    icon: <BulbOutlined />,
+    color: '#0ea5e9',
     fields: ['apiKey'],
     apiKeyUrl: 'https://bigmodel.cn/usercenter/apikeys'
   },
-  { 
-    value: 'moonshot' as ModelProvider, 
-    label: 'Moonshot (Kimi)', 
-    icon: '🌙',
+  {
+    value: 'moonshot' as ModelProvider,
+    label: 'Moonshot (Kimi)',
+    icon: <ApiOutlined />,
+    color: '#1677ff',
     fields: ['apiKey'],
     apiKeyUrl: 'https://platform.moonshot.cn/console/api-keys'
   },
-  { 
-    value: 'gemini' as ModelProvider, 
-    label: 'Google Gemini', 
-    icon: '✨',
+  {
+    value: 'gemini' as ModelProvider,
+    label: 'Google Gemini',
+    icon: <ApiOutlined />,
+    color: '#4285f4',
     fields: ['apiKey'],
     apiKeyUrl: 'https://aistudio.google.com/app/apikey'
   },
@@ -301,14 +312,23 @@ export default function Setup() {
                       background: selectedProvider === provider.value ? 'rgba(224, 82, 82, 0.06)' : undefined,
                       transition: 'all 0.2s ease',
                       animationDelay: `${index * 50}ms`,
+                      cursor: 'pointer',
                     }}
                     onClick={() => setSelectedProvider(provider.value)}
                   >
-                    <div style={{ 
-                      fontSize: 36, 
+                    <div style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 14,
+                      background: selectedProvider === provider.value ? provider.color : '#f5f5f5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       marginBottom: 12,
-                      transform: selectedProvider === provider.value ? 'scale(1.1)' : 'scale(1)',
-                      transition: 'transform 0.2s ease',
+                      fontSize: 24,
+                      color: selectedProvider === provider.value ? '#fff' : provider.color,
+                      transform: selectedProvider === provider.value ? 'scale(1.05)' : 'scale(1)',
+                      transition: 'all 0.2s ease',
                     }}>{provider.icon}</div>
                     <Text strong style={{ 
                       color: selectedProvider === provider.value ? '#e05252' : undefined,
@@ -384,6 +404,7 @@ export default function Setup() {
                       borderColor: selectedChannel === channel.value ? '#1890ff' : undefined,
                       borderWidth: selectedChannel === channel.value ? 2 : 1,
                       background: selectedChannel === channel.value ? '#e6f7ff' : undefined,
+                      cursor: 'pointer',
                     }}
                     onClick={() => setSelectedChannel(channel.value)}
                   >

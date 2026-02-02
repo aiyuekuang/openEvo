@@ -59,6 +59,182 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 150ms;
   --duration-normal: 250ms;
+
+  /* 状态颜色系统 - 语义一致 */
+  --status-running: #22c55e;      /* 绿色 - 运行中/成功 */
+  --status-running-bg: rgba(34, 197, 94, 0.1);
+  --status-ready: #1890ff;        /* 蓝色 - 就绪/等待 */
+  --status-ready-bg: rgba(24, 144, 255, 0.1);
+  --status-warning: #faad14;      /* 黄色 - 需要操作/警告 */
+  --status-warning-bg: rgba(250, 173, 20, 0.1);
+  --status-error: #ff4d4f;        /* 红色 - 错误 */
+  --status-error-bg: rgba(255, 77, 79, 0.1);
+  --status-disabled: #d9d9d9;     /* 灰色 - 禁用/不可用 */
+  --status-disabled-bg: rgba(217, 217, 217, 0.1);
+}
+
+/* 深色模式 - 响应系统偏好 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 主色调 - 中国红（深色模式下稍微提亮） */
+    --primary: #ef6b6b;
+    --primary-hover: #f08080;
+    --primary-active: #e05252;
+    --primary-bg: rgba(239, 107, 107, 0.15);
+
+    /* 辅助色 - 青绿 */
+    --secondary: #2dd4bf;
+    --secondary-hover: #5eead4;
+    --secondary-bg: rgba(45, 212, 191, 0.15);
+
+    /* 背景色层级 - 深色 */
+    --bg-base: #0f172a;
+    --bg-elevated: #1e293b;
+    --bg-muted: #334155;
+    --bg-hover: #475569;
+
+    /* 文字色 - 深色模式 */
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    /* 边框 - 深色模式 */
+    --border: #334155;
+    --border-strong: #475569;
+
+    /* 阴影 - 深色模式下更强 */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.6);
+
+    /* 状态颜色 - 深色模式 */
+    --status-running-bg: rgba(34, 197, 94, 0.2);
+    --status-ready-bg: rgba(24, 144, 255, 0.2);
+    --status-warning-bg: rgba(250, 173, 20, 0.2);
+    --status-error-bg: rgba(255, 77, 79, 0.2);
+    --status-disabled-bg: rgba(217, 217, 217, 0.15);
+  }
+
+  /* 深色模式下 Ant Design 组件覆盖 */
+  .ant-card {
+    background: var(--bg-elevated) !important;
+    border-color: var(--border) !important;
+  }
+
+  .ant-input,
+  .ant-input-password .ant-input {
+    background: var(--bg-muted) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .ant-input::placeholder {
+    color: var(--text-muted) !important;
+  }
+
+  .ant-select-selector {
+    background: var(--bg-muted) !important;
+    border-color: var(--border) !important;
+  }
+
+  .ant-select-selection-placeholder,
+  .ant-select-selection-item {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-modal-content {
+    background: var(--bg-elevated) !important;
+  }
+
+  .ant-modal-header {
+    background: var(--bg-elevated) !important;
+    border-color: var(--border) !important;
+  }
+
+  .ant-modal-title {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-modal-close-x {
+    color: var(--text-secondary) !important;
+  }
+
+  .ant-drawer-content {
+    background: var(--bg-elevated) !important;
+  }
+
+  .ant-drawer-header {
+    background: var(--bg-elevated) !important;
+    border-color: var(--border) !important;
+  }
+
+  .ant-drawer-title {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-menu {
+    background: transparent !important;
+  }
+
+  .ant-menu-item {
+    color: var(--text-secondary) !important;
+  }
+
+  .ant-menu-item:hover {
+    background: var(--bg-hover) !important;
+  }
+
+  .ant-menu-item-selected {
+    background: var(--primary-bg) !important;
+    color: var(--primary) !important;
+  }
+
+  .ant-tabs-tab {
+    color: var(--text-secondary) !important;
+  }
+
+  .ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: var(--primary) !important;
+  }
+
+  .ant-tag {
+    background: var(--bg-muted) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .ant-alert {
+    background: var(--bg-muted) !important;
+    border-color: var(--border) !important;
+  }
+
+  .ant-form-item-label > label {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-typography {
+    color: var(--text-primary) !important;
+  }
+
+  .ant-typography.ant-typography-secondary {
+    color: var(--text-secondary) !important;
+  }
+
+  /* Sider 深色模式 */
+  .ant-layout-sider {
+    background: var(--bg-elevated) !important;
+    border-color: var(--border) !important;
+  }
+
+  /* 滚动条深色模式 */
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--bg-hover);
+  }
 }
 
 * {
@@ -270,6 +446,46 @@ body {
 
 .animate-scale-in {
   animation: scaleIn 0.25s var(--ease-spring) forwards;
+}
+
+/* 安装成功动画 */
+@keyframes installSuccess {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+    border-color: #22c55e;
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+    border-color: #22c55e;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    border-color: var(--border, #e2e8f0);
+  }
+}
+
+.skill-card-success {
+  animation: installSuccess 0.8s var(--ease-out) forwards;
+}
+
+/* 减少动画 - 响应用户偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-fade-in,
+  .animate-slide-in,
+  .animate-scale-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* 渐变背景 */

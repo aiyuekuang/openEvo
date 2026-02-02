@@ -1,0 +1,24 @@
+{
+  "name": "gifgrep",
+  "description": "Search GIF providers with CLI/TUI, download results, and extract stills/sheets.",
+  "version": "1.0.0",
+  "emoji": "🧲",
+  "homepage": "https://github.com/benfry/gifgrep",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "gifgrep CLI",
+      "description": "检测 gifgrep 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 gifgrep",
+      "description": "安装 gifgrep 命令行工具"
+    }
+  }
+}

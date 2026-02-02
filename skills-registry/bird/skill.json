@@ -1,0 +1,24 @@
+{
+  "name": "bird",
+  "description": "X/Twitter CLI for reading, searching, posting, and engagement via cookies.",
+  "version": "1.0.0",
+  "emoji": "🐦",
+  "homepage": "https://bird.fast",
+  "category": "tool",
+  "tags": [],
+  "checks": [
+    {
+      "id": "cli",
+      "script": "scripts/check-cli.mjs",
+      "label": "bird CLI",
+      "description": "检测 bird 是否已安装"
+    }
+  ],
+  "actions": {
+    "install-cli": {
+      "script": "scripts/install-cli.mjs",
+      "label": "安装 bird",
+      "description": "安装 bird 命令行工具"
+    }
+  }
+}
