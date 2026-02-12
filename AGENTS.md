@@ -4,111 +4,140 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-OpenClaw CN - 中国商用个人 AI 助手
+**AI Skill Forge** 是一个基于 Electron 的桌面应用，使用 **Claude Agent SDK** 提供 AI 驱动的智能助手功能。用户可以通过自然语言与 Claude AI 对话，获得实时的流式响应。
 
-基于 OpenClaw 架构，支持企业微信/钉钉/飞书等国内渠道。
-
-## Development Setup
+## Build & Development Commands
 
 ```bash
-pnpm install
-pnpm build
+# 开发模式 (启动 Electron + Vite dev server)
+cd desktop && npm run dev
+
+# 构建生产版本
+cd desktop && npm run build
+
+# 类型检查
+cd desktop && npm run typecheck
+
+# 预览构建产物
+cd desktop && npm run preview
 ```
-
-## Build Commands
-
-- `pnpm build` - 编译 TypeScript
-- `pnpm dev` - 开发模式
-- `pnpm gateway:watch` - Gateway 热重载
-
-## Testing
-
-- `pnpm test` - 运行测试
-- `pnpm lint` - 代码检查
 
 ## Architecture
 
-- **Gateway** (`src/gateway/`) - WebSocket 控制平面
-- **Agents** (`src/agents/`) - AI 对话运行时
-- **Channels** (`src/channels/`) - 渠道抽象层
-- **CLI** (`src/cli/`, `src/commands/`) - 命令行工具
-- **Config** (`src/config/`) - 配置系统
+### 进程结构 (Electron)
 
-### 中国渠道 (Chinese Channels)
+```
+desktop/
+├── main/           # Main Process (Node.js)
+│   ├── index.ts    # 应用入口，创建 BrowserWindow
+│   ├── ipc.ts      # IPC handlers 注册中心
+│   ├── config/     # 配置存储 (Electron safeStorage)
+│   │   └── store.ts
+│   └── llm/        # Claude Agent SDK 集成 ★
+│       └── claude-sdk-adapter.ts  # Claude SDK 适配器
+├── preload/        # Preload scripts (contextBridge)
+│   └── index.ts
+└── renderer/       # Renderer Process (React)
+    └── src/
+        ├── pages/      # 页面组件 (ClaudeSetup, Main, Settings)
+        └── components/ # UI 组件
+```
 
-- **企业微信** (`src/wecom/`) - WeCom 渠道实现
-- **钉钉** (`src/dingtalk/`) - DingTalk 渠道实现
-- **飞书** (`src/feishu/`) - Feishu/Lark 渠道实现
-- **插件注册** (`src/channels-cn/`) - 统一注册入口
+### Claude Agent SDK 集成
 
-每个渠道包含:
-- `types.ts` - 类型定义
-- `api.ts` - API 客户端 (Token 管理, 发消息, 用户信息)
-- `crypto.ts` - 消息加解密 (AES-256-CBC)
-- `callback.ts` - 回调处理 (URL 验证, 消息解析)
-- `plugin.ts` - ChannelPlugin 插件定义
+核心模块：`main/llm/claude-sdk-adapter.ts`
 
-## Key Differences from OpenClaw
+**功能**：
+- 封装 `@anthropic-ai/claude-agent-sdk` 的 `query()` API
+- 提供流式响应支持（token 级增量更新）
+- 自动处理环境变量（移除 ELECTRON_RUN_AS_NODE）
+- 支持配置化模型和 system prompt
 
-1. **渠道**: 移除了海外渠道 (WhatsApp/Telegram/Slack/Discord/Signal)
-2. **目标渠道**: 企业微信、钉钉、飞书
-3. **模型**: 需要添加国产模型 Provider (文心/智谱/DeepSeek)
+**数据流**：
+```
+用户输入 → IPC (task:create) → ClaudeSDKAdapter.sendMessage()
+        → Claude Agent SDK query() → 流式事件
+        → IPC (task:stream) → 渲染进程实时更新
+```
 
-## Important Notes for Agents
+### 关键接口
 
-- Runtime: Node 22+
-- Package Manager: pnpm
-- Language: TypeScript (ESM)
-- 配置文件: `~/.openclaw/openclaw.json`
+**ClaudeConfig**
+```typescript
+interface ClaudeConfig {
+  apiKey: string
+  model?: string  // 默认 'claude-sonnet-4-5-20250929'
+  systemPrompt?: string
+  maxTokens?: number
+}
+```
 
-## Skills (技能触发规则)
+**ClaudeStreamEvent**
+```typescript
+interface ClaudeStreamEvent {
+  type: 'token' | 'done' | 'error'
+  content?: string        // 增量内容 (token)
+  fullResponse?: string   // 当前累积的完整响应
+  error?: string
+}
+```
 
-**⚠️ 强制规则**: 所有对话都必须匹配到至少一个 Skill，并严格按照该 Skill 的指导执行。如果实在没有合适的 Skill，需主动向用户反馈并确认如何处理。
+### IPC 接口
 
-以下技能在相关场景下**自动触发**，只要涉及一点相关内容就启用：
+**Claude 配置**
+- `claude:check` → 检查是否已配置 API Key
+- `claude:configure` → 保存 API Key 和模型配置
+- `claude:get-config` → 获取当前配置
 
-### 1. Config-Driven Development (`.claude/skills/config-driven-dev/`)
-**触发条件** - 任何涉及以下内容时启用：
-- 新增功能、新指令、新开关
-- 修改行为（阈值、策略、过滤规则等）
-- 配置文件修改 (`openclaw.json`, `package.json` 配置项等)
-- 环境变量、常量定义
-- 讨论"默认值"、"可配置"、"开关"等概念
+**任务执行**
+- `task:create(taskId, message)` → 创建任务并执行（返回 Promise）
+- `task:stream` (event) → 流式推送 token 更新到渲染进程
+- `task:cancel(taskId)` → 取消正在执行的任务
 
-### 2. UI/UX Design (`.claude/skills/ui-ux-design.md`)
-**触发条件** - 任何涉及以下内容时启用：
-- 用户界面、交互设计
-- CLI 命令输出格式、提示信息
-- 错误消息、用户反馈文案
-- 用户体验、流程设计
-- 文档结构、可读性优化
+**通用**
+- `config:get(key)` / `config:set(key, value)` → 读写配置
+- `shell:openExternal(url)` → 打开外部链接
+- `dep:check-all` → 检查依赖状态
 
-### 3. Product Manager Prompts (`.claude/skills/product-manager-prompts/`)
-**触发条件** - 任何涉及以下内容时启用：
-- 产品需求、功能规划
-- 用户故事 (User Story)
-- PRD、需求文档
-- 用户画像、场景分析
-- 竞品分析、市场定位
-- 路线图、优先级排序
-- 问题定义、假设验证
+### 配置存储
 
-### 4. Code Review (`.claude/skills/code-review/`)
-**触发条件** - 任何涉及以下内容时启用：
-- 代码编写或修改后
-- PR/MR 提交前审查
-- 代码质量、安全检查
-- 提及 "review"、"检查"、"审查"、"bug"
-- `git diff` 有未提交的改动
-- 安全漏洞扫描、OWASP Top 10
+使用 Electron 的 `safeStorage` API 加密存储敏感信息（API Key）。
 
-### 5. Systematic Debugging (`.claude/skills/systematic-debugging/`)
-**触发条件** - 任何涉及以下内容时启用：
-- Bug 修复、问题排查
-- 测试失败、异常行为
-- 提及 "调试"、"debug"、"报错"、"error"、"bug"
-- 运行时错误、崩溃、异常
-- "之前能跑"、"突然不工作了"
-- 间歇性失败、竞态条件
+**配置文件位置**：
+- macOS: `~/Library/Application Support/openclaw-cn/config.json`
+- Windows: `%APPDATA%\openclaw-cn\config.json`
+- Linux: `~/.config/openclaw-cn/config.json`
 
-**核心原则**: 不调查根因，就不修复！使用四阶段方法：根因调查 → 模式分析 → 假设测试 → 实施修复
+### 前端页面
+
+**ClaudeSetup** (`renderer/src/pages/ClaudeSetup.tsx`)
+- 首次配置引导页面
+- 输入 API Key 和选择模型
+- 验证并保存配置
+
+**Main** (`renderer/src/pages/Main.tsx`)
+- 主界面，显示任务列表
+- 底部输入框发送消息
+- 实时显示流式响应
+
+**Settings** (`renderer/src/pages/Settings.tsx`)
+- 查看当前 Claude 配置（隐藏部分 API Key）
+- 重新配置 API Key
+- 系统信息
+
+## Conventions
+
+- **中文优先**: UI 文案和代码注释优先使用中文
+- **流式响应**: 使用 Claude Agent SDK 的 AsyncGenerator 实现 token 级流式输出
+- **IPC 命名**: 使用 `namespace:action` 格式，如 `claude:configure`, `task:create`
+- **安全存储**: API Key 使用 Electron safeStorage 加密存储
+- **环境清理**: 主进程中 delete `ELECTRON_RUN_AS_NODE` 以确保 SDK 正常运行
+
+## Dependencies
+
+核心依赖：
+- `@anthropic-ai/claude-agent-sdk` - Claude Agent SDK（官方）
+- `electron` - Electron 框架
+- `electron-vite` - 构建工具
+- `react` + `react-dom` - UI 框架
+- `tailwindcss` - CSS 框架
