@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-**AI Skill Forge** 是一个基于 Electron 的桌面应用，使用 **Claude Agent SDK** 提供 AI 驱动的智能助手功能。用户可以通过自然语言与 Claude AI 对话，获得实时的流式响应。
+**OpenEvo** 是一个基于 Electron 的桌面 AI 平台，通过 Skills 递归调用实现自我管理和进化。用户可以通过自然语言与多供应商 LLM 对话，获得实时的流式响应。
 
 ## Build & Development Commands
 
@@ -104,9 +104,9 @@ interface ClaudeStreamEvent {
 使用 Electron 的 `safeStorage` API 加密存储敏感信息（API Key）。
 
 **配置文件位置**：
-- macOS: `~/Library/Application Support/openclaw-cn/config.json`
-- Windows: `%APPDATA%\openclaw-cn\config.json`
-- Linux: `~/.config/openclaw-cn/config.json`
+- macOS: `~/Library/Application Support/openevo/config.json`
+- Windows: `%APPDATA%\openevo\config.json`
+- Linux: `~/.config/openevo/config.json`
 
 ### 前端页面
 

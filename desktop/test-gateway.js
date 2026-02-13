@@ -10,7 +10,7 @@ const path = require('path')
 // 读取 gatewayToken (从 Electron 应用数据目录)
 const configPath = path.join(
   process.env.HOME || process.env.USERPROFILE,
-  'Library/Application Support/openclaw-cn/config/store.json'
+  'Library/Application Support/openevo/config/store.json'
 )
 
 let config = {}

@@ -1,28 +1,94 @@
-import { useState, useRef, useCallback } from 'react'
-import { Send, ImagePlus, X } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { Send, ImagePlus, X, ChevronDown } from 'lucide-react'
+
+interface ModelOption {
+  providerId: string
+  providerName: string
+  modelId: string
+  modelName: string
+}
 
 interface Props {
-  onSubmit: (title: string, message: string, images: string[]) => void
+  onSubmit: (title: string, message: string, images: string[], providerId?: string, model?: string) => void
 }
 
 export function TaskInput({ onSubmit }: Props) {
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [images, setImages] = useState<string[]>([])
+  const [modelOptions, setModelOptions] = useState<ModelOption[]>([])
+  const [selectedModel, setSelectedModel] = useState<ModelOption | null>(null)
+  const [showModelPicker, setShowModelPicker] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const pickerRef = useRef<HTMLDivElement>(null)
+
+  // Load configured providers and active model
+  useEffect(() => {
+    async function load() {
+      try {
+        const [providerData, statusData, active] = await Promise.all([
+          window.api.provider.list(),
+          window.api.provider.statuses(),
+          window.api.provider.getActive(),
+        ])
+        const configuredIds = new Set(statusData.filter(s => s.configured).map(s => s.providerId))
+        const allProviders = [...providerData.presets, ...providerData.custom]
+
+        const options: ModelOption[] = []
+        for (const p of allProviders) {
+          if (!configuredIds.has(p.id)) continue
+          for (const m of p.models) {
+            options.push({
+              providerId: p.id,
+              providerName: p.name,
+              modelId: m.id,
+              modelName: m.name,
+            })
+          }
+        }
+        setModelOptions(options)
+
+        // Set active model
+        let picked: ModelOption | null = null
+        if (active) {
+          const match = options.find(o => o.providerId === active.providerId && o.modelId === active.model)
+          picked = match || options[0] || null
+        } else if (options.length > 0) {
+          picked = options[0]
+        }
+        if (picked) {
+          setSelectedModel(picked)
+        }
+      } catch (err) {
+        console.error('Failed to load model options:', err)
+      }
+    }
+    load()
+  }, [])
+
+  // Close picker on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowModelPicker(false)
+      }
+    }
+    if (showModelPicker) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showModelPicker])
 
   const handleSubmit = useCallback(() => {
     const msg = message.trim()
     if (!msg) return
-    onSubmit(title.trim(), msg, images)
+    onSubmit(title.trim(), msg, images, selectedModel?.providerId, selectedModel?.modelId)
     setTitle('')
     setMessage('')
     setImages([])
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
-  }, [title, message, images, onSubmit])
+  }, [title, message, images, selectedModel, onSubmit])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -57,7 +123,6 @@ export function TaskInput({ onSubmit }: Props) {
     if (fileRef.current) fileRef.current.value = ''
   }, [])
 
-  // Support pasting screenshots from clipboard
   const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items
     if (!items) return
@@ -73,6 +138,20 @@ export function TaskInput({ onSubmit }: Props) {
   const removeImage = useCallback((idx: number) => {
     setImages(prev => prev.filter((_, i) => i !== idx))
   }, [])
+
+  function handleSelectModel(option: ModelOption) {
+    setSelectedModel(option)
+    setShowModelPicker(false)
+    // Also set as active provider
+    window.api.provider.setActive(option.providerId, option.modelId)
+  }
+
+  // Group options by provider
+  const groupedOptions = modelOptions.reduce<Record<string, ModelOption[]>>((acc, opt) => {
+    if (!acc[opt.providerName]) acc[opt.providerName] = []
+    acc[opt.providerName].push(opt)
+    return acc
+  }, {})
 
   return (
     <div className="shrink-0 border-t border-[#464951] bg-[#383b42] px-4 py-3">
@@ -92,6 +171,62 @@ export function TaskInput({ onSubmit }: Props) {
           ))}
         </div>
       )}
+
+      {/* Model selector row */}
+      <div className="mb-2 flex items-center gap-2" ref={pickerRef}>
+        <div className="relative">
+          <button
+            onClick={() => setShowModelPicker(!showModelPicker)}
+            className="flex cursor-pointer items-center gap-1.5 rounded-md border border-[#464951] bg-[#2b2d33] px-2.5 py-1 text-[11px] text-[#bcbec4] transition-colors hover:border-indigo-500/50"
+          >
+            {selectedModel ? (
+              <>
+                <div className="h-1.5 w-1.5 rounded-full bg-green-400" />
+                <span className="max-w-[200px] truncate">{selectedModel.modelName}</span>
+              </>
+            ) : (
+              <span className="text-[#7d818a]">选择模型</span>
+            )}
+            <ChevronDown size={12} className="text-[#7d818a]" />
+          </button>
+
+          {/* Dropdown */}
+          {showModelPicker && (
+            <div className="absolute bottom-full left-0 z-50 mb-1 w-72 rounded-lg border border-[#464951] bg-[#2b2d33] py-1 shadow-xl">
+              {Object.entries(groupedOptions).map(([providerName, options]) => (
+                <div key={providerName}>
+                  <div className="px-3 py-1.5 text-[10px] font-semibold tracking-wider text-[#7d818a]">
+                    {providerName}
+                  </div>
+                  {options.map(opt => {
+                    const isActive = selectedModel?.providerId === opt.providerId && selectedModel?.modelId === opt.modelId
+                    return (
+                      <button
+                        key={`${opt.providerId}-${opt.modelId}`}
+                        onClick={() => handleSelectModel(opt)}
+                        className={`flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[12px] transition-colors ${
+                          isActive ? 'bg-indigo-500/10 text-indigo-400' : 'text-[#bcbec4] hover:bg-[#383b42]'
+                        }`}
+                      >
+                        <div className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-indigo-400' : 'bg-transparent'}`} />
+                        {opt.modelName}
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+              {modelOptions.length === 0 && (
+                <div className="px-3 py-3 text-center text-[11px] text-[#7d818a]">
+                  尚未配置任何供应商，请前往设置配置
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {selectedModel && (
+          <span className="text-[10px] text-[#7d818a]">{selectedModel.providerName}</span>
+        )}
+      </div>
 
       <div className="flex items-end gap-3">
         <input

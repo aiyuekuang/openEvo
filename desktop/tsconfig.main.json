@@ -6,5 +6,6 @@
     "lib": ["ES2022"],
     "types": ["node"]
   },
-  "include": ["main/**/*"]
+  "include": ["main/**/*"],
+  "exclude": ["main/gateway/**", "main/task-handler.ts", "main/llm/**"]
 }

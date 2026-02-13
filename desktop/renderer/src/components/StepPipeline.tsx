@@ -17,7 +17,7 @@ export function StepPipeline({ steps }: Props) {
               className={clsx(
                 'flex h-6 w-6 items-center justify-center rounded-full text-xs transition-all',
                 step.status === 'done' && 'bg-green-500/20 text-green-400',
-                step.status === 'active' && 'bg-indigo-500/20 text-indigo-400 animate-pulse',
+                step.status === 'running' && 'bg-indigo-500/20 text-indigo-400 animate-pulse',
                 step.status === 'pending' && 'bg-[#464951] text-[#7d818a]',
               )}
             >
@@ -31,7 +31,7 @@ export function StepPipeline({ steps }: Props) {
               className={clsx(
                 'text-xs',
                 step.status === 'done' && 'text-green-400',
-                step.status === 'active' && 'text-indigo-400',
+                step.status === 'running' && 'text-indigo-400',
                 step.status === 'pending' && 'text-[#7d818a]',
               )}
             >

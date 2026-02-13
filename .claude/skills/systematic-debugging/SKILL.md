@@ -175,7 +175,7 @@ interface FixConfig {
 5. 添加确定性等待或正确的同步
 ```
 
-## OpenClaw CN 特定调试
+## OpenEvo 特定调试
 
 ### 渠道消息问题
 ```

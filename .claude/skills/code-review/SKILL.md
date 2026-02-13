@@ -1,6 +1,6 @@
 # Code Review Skill
 
-基于 GitHub 最火热的 AI 代码检查配置，适配 OpenClaw CN 项目。
+基于 GitHub 最火热的 AI 代码检查配置，适配 OpenEvo 项目。
 
 ## 触发条件
 
@@ -225,7 +225,7 @@ function process(data: any): any { ... }
 function process(data: UserInput): ProcessedOutput { ... }
 ```
 
-## OpenClaw CN 特定检查
+## OpenEvo 特定检查
 
 ### 渠道安全
 - [ ] 企业微信/钉钉/飞书消息加密正确实现

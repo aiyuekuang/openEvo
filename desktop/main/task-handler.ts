@@ -80,7 +80,31 @@ export async function executeTaskViaGateway(
 
       const message = data.message
 
-      // chat 事件的 payload 包含状态信息
+      // 处理流式 content_block_delta（逐字输出）
+      if (message.type === 'content_block_delta' && message.delta?.text) {
+        const deltaText = message.delta.text
+        console.log('[Task] Received content_block_delta:', deltaText)
+        fullResponse += deltaText
+        onStream({
+          taskId,
+          type: 'token',
+          content: deltaText,
+          fullResponse,
+        })
+      }
+
+      // 处理消息完成（message_stop）
+      if (message.type === 'message_stop') {
+        console.log('[Task] Message stop reached')
+        // 任务完成
+        if (fullResponse) {
+          safeResolve({ sessionId, reply: fullResponse })
+        } else {
+          safeResolve({ sessionId, error: 'No response received' })
+        }
+      }
+
+      // 兼容旧格式：chat 事件的 payload 包含状态信息
       if (message.state === 'final') {
         console.log('[Task] Chat final state reached')
         // 任务完成
@@ -108,13 +132,24 @@ export async function executeTaskViaGateway(
 
     // 发送 RPC 请求 (OpenClaw Gateway API 格式)
     const idempotencyKey = `${taskId}-${Date.now()}`
+
+    // 优先使用支持工具调用的 GPT-4o 模型
+    const requestParams: any = {
+      sessionKey: sessionId,
+      message: message,
+      deliver: false, // 不立即发送，等待流式响应
+      idempotencyKey,
+    }
+
+    // 如果指定了模型，添加到参数中
+    if (model) {
+      requestParams.model = model
+    }
+
+    console.log('[Task] Sending chat.send with params:', JSON.stringify(requestParams, null, 2))
+
     gatewayManager
-      .rpc('chat.send', {
-        sessionKey: sessionId,
-        message: message,
-        deliver: false, // 不立即发送，等待流式响应
-        idempotencyKey,
-      })
+      .rpc('chat.send', requestParams)
       .catch((error) => {
         const errorMessage = error instanceof Error ? error.message : String(error)
         console.error('[Task] RPC error:', errorMessage)

@@ -1,4 +1,4 @@
-# OpenClaw CN — AI Skills 进化平台架构设计
+# OpenEvo — AI Skills 进化平台架构设计
 
 ## 1. 项目定位
 
@@ -396,7 +396,7 @@ const presetProviders = {
 ```
 ┌─────────────────────────────────────────┐
 │                                         │
-│            OpenClaw CN                  │
+│            OpenEvo                      │
 │                                         │
 │         ┌──────────────────┐            │
 │         │                  │            │
@@ -608,7 +608,7 @@ async function detect(dep: Dependency): Promise<DetectResult> {
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  OpenClaw CN                          ⚙ 设置  ─ □ ×     │
+│  OpenEvo                              ⚙ 设置  ─ □ ×     │
 ├────────────┬─────────────────────────────────────────────┤
 │            │                                             │
 │  状态面板   │            对话区域                          │
@@ -1089,7 +1089,7 @@ OpenClaw Agent 执行:
 ## 8. 项目目录结构
 
 ```
-openclaw-cn/
+openevo/
 ├── docs/
 │   └── ARCHITECTURE.md
 ├── desktop/                            # Electron 桌面应用

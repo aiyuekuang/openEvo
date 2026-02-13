@@ -1,154 +1,149 @@
-import { ipcMain, shell } from 'electron'
+import { ipcMain, shell, BrowserWindow } from 'electron'
 import { ConfigStore } from './config/store'
-import { createClaudeCLIAdapter, ClaudeCLIAdapter } from './llm/claude-cli-adapter'
-import { GatewayManager } from './gateway/manager'
-import { executeTaskViaGateway } from './task-handler'
+import { llmClient } from './providers/llm-client'
+import { PRESET_PROVIDERS } from './providers/registry'
+import {
+  setProviderAuth, deleteProviderAuth,
+  getAllProviderStatuses, setDefaultModel,
+  getActiveProvider, setActiveProvider,
+  addCustomProvider, removeCustomProvider, getCustomProviders,
+} from './providers/store'
+import type { ProviderAuth } from './providers/types'
+import { startOAuthFlow, cancelOAuthFlow, type OAuthProviderId } from './providers/oauth'
 
 const configStore = new ConfigStore()
+const activeTasks = new Map<string, { cancel: () => void }>()
 
-// Active task sessions
-const activeTasks = new Map<string, { sessionId: string; cancel: () => void }>()
-
-export function registerIpcHandlers(gatewayManager: GatewayManager) {
-  // --- Gateway 控制 ---
-  ipcMain.handle('gateway:start', async () => {
-    await gatewayManager.start()
-    return gatewayManager.getStatus()
-  })
-
-  ipcMain.handle('gateway:stop', async () => {
-    await gatewayManager.stop()
-  })
-
-  ipcMain.handle('gateway:restart', async () => {
-    await gatewayManager.restart()
-  })
-
-  ipcMain.handle('gateway:status', async () => {
-    return gatewayManager.getStatus()
-  })
-
-  ipcMain.handle('gateway:rpc', async (_e, method: string, params?: unknown) => {
-    return gatewayManager.rpc(method, params)
-  })
-
-  ipcMain.handle('gateway:chat', async (event, content: string, options?: { model?: string }) => {
-    const sender = event.sender
-
-    try {
-      // 通过 RPC 调用发送聊天消息
-      const result = await gatewayManager.rpc('chat.send', {
-        content,
-        model: options?.model || 'claude-sonnet-4-5-20250929',
-      })
-
-      return { success: true, result }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error('[IPC] Gateway chat error:', errorMessage)
-      return { success: false, error: errorMessage }
-    }
-  })
-
-  // --- 原有 handlers ---
+export function registerIpcHandlers() {
   // --- Config ---
-  ipcMain.handle('config:get', async (_e, key: string) => {
-    return configStore.get(key)
+  ipcMain.handle('config:get', async (_e, key: string) => configStore.get(key))
+  ipcMain.handle('config:set', async (_e, key: string, value: unknown) => configStore.set(key, value))
+
+  // --- Shell ---
+  ipcMain.handle('shell:openExternal', async (_e, url: string) => shell.openExternal(url))
+
+  // --- Provider Management ---
+  ipcMain.handle('provider:list', async () => {
+    const presets = PRESET_PROVIDERS.map(p => ({
+      ...p,
+      // Don't send full model objects, just the config
+    }))
+    const custom = getCustomProviders()
+    return { presets, custom }
   })
 
-  ipcMain.handle('config:set', async (_e, key: string, value: unknown) => {
-    return configStore.set(key, value)
+  ipcMain.handle('provider:statuses', async () => {
+    return getAllProviderStatuses()
   })
 
-  // --- Claude CLI 检测 ---
-  ipcMain.handle('claude:check', async () => {
-    const cliAvailable = await ClaudeCLIAdapter.isAvailable()
-
-    if (cliAvailable) {
-      return {
-        configured: true,
-        cliAvailable: true,
-      }
-    }
-
-    return {
-      configured: false,
-      cliAvailable: false,
-    }
-  })
-
-  // --- 使用 CLI 模式 ---
-  ipcMain.handle('claude:use-cli', async (_e, model?: string) => {
-    const cliAvailable = await ClaudeCLIAdapter.isAvailable()
-    if (!cliAvailable) {
-      return {
-        ok: false,
-        error: 'Claude CLI not found. Please install it first.',
-      }
-    }
-
-    configStore.set('claudeMode', 'cli')
-    if (model) {
-      configStore.set('claudeModel', model)
-    }
-
+  ipcMain.handle('provider:save-auth', async (_e, auth: ProviderAuth) => {
+    setProviderAuth(auth)
     return { ok: true }
   })
 
-  // --- 获取 Claude 配置 ---
-  ipcMain.handle('claude:get-config', async () => {
-    const model = (configStore.get('claudeModel') as string) || 'claude-sonnet-4-5-20250929'
-    const cliAvailable = await ClaudeCLIAdapter.isAvailable()
-
-    return { mode: 'cli', model, cliAvailable }
+  ipcMain.handle('provider:delete-auth', async (_e, providerId: string) => {
+    deleteProviderAuth(providerId)
+    return { ok: true }
   })
 
-  // --- Open external URL ---
-  ipcMain.handle('shell:openExternal', async (_e, url: string) => {
-    await shell.openExternal(url)
+  ipcMain.handle('provider:test', async (_e, providerId: string, apiKey: string, baseUrl?: string, model?: string) => {
+    return llmClient.testConnection(providerId, apiKey, baseUrl, model)
   })
 
-  // --- Task: Create & run (使用 Gateway) ---
-  ipcMain.handle('task:create', async (event, taskId: string, message: string) => {
+  ipcMain.handle('provider:set-default-model', async (_e, providerId: string, modelId: string) => {
+    setDefaultModel(providerId, modelId)
+    return { ok: true }
+  })
+
+  ipcMain.handle('provider:set-active', async (_e, providerId: string, model: string) => {
+    setActiveProvider(providerId, model)
+    return { ok: true }
+  })
+
+  ipcMain.handle('provider:get-active', async () => {
+    return getActiveProvider()
+  })
+
+  ipcMain.handle('provider:add-custom', async (_e, provider: any) => {
+    addCustomProvider(provider)
+    return { ok: true }
+  })
+
+  ipcMain.handle('provider:remove-custom', async (_e, id: string) => {
+    removeCustomProvider(id)
+    return { ok: true }
+  })
+
+  // --- OAuth ---
+  ipcMain.handle('oauth:start', async (event, providerId: OAuthProviderId) => {
     const sender = event.sender
-    const sessionId = `session-${taskId.slice(0, 8)}`
+    const win = BrowserWindow.fromWebContents(sender) ?? undefined
+    // Fire-and-forget: startOAuthFlow sends events via sender.send
+    startOAuthFlow(providerId, sender, win)
+    return { ok: true }
+  })
 
-    // 获取配置
-    const model = (configStore.get('claudeModel') as string) || 'claude-sonnet-4-5-20250929'
+  ipcMain.handle('oauth:cancel', async (_e, providerId: string) => {
+    cancelOAuthFlow(providerId)
+    return { ok: true }
+  })
 
-    // 检查 Gateway 状态
-    const gatewayStatus = gatewayManager.getStatus()
-    console.log('[IPC] Gateway status:', gatewayStatus)
-    if (gatewayStatus.state !== 'running') {
-      return {
-        sessionId,
-        error: `Gateway not running. Current state: ${gatewayStatus.state}. Error: ${gatewayStatus.error || 'none'}`,
+  // --- Task: Create & run (direct LLM API) ---
+  ipcMain.handle('task:create', async (event, taskId: string, message: string, providerId?: string, model?: string) => {
+    const sender = event.sender
+
+    // Resolve provider + model
+    let activeProviderId = providerId
+    let activeModel = model
+    if (!activeProviderId || !activeModel) {
+      const active = getActiveProvider()
+      if (!active) {
+        return { error: '请先配置至少一个 AI 供应商' }
       }
+      activeProviderId = activeProviderId || active.providerId
+      activeModel = activeModel || active.model
     }
 
-    // 取消标志（暂不支持取消）
-    const cancel = () => {}
-    activeTasks.set(taskId, { sessionId, cancel })
+    let cancelled = false
+    activeTasks.set(taskId, {
+      cancel: () => { cancelled = true }
+    })
 
     try {
-      const result = await executeTaskViaGateway(
-        gatewayManager,
-        taskId,
-        message,
-        model,
-        (streamEvent) => {
-          console.log('[IPC] Sending task:stream event:', streamEvent.type, streamEvent.fullResponse?.substring(0, 50))
-          sender.send('task:stream', streamEvent)
-        }
+      const stream = llmClient.chat(
+        [{ role: 'user', content: message }],
+        { model: activeModel, providerId: activeProviderId }
       )
 
+      let finalResponse = ''
+      for await (const streamEvent of stream) {
+        if (cancelled) break
+
+        if (streamEvent.type === 'token') {
+          finalResponse = streamEvent.fullResponse || ''
+          sender.send('task:stream', {
+            taskId,
+            type: 'token',
+            content: streamEvent.content,
+            fullResponse: streamEvent.fullResponse,
+          })
+        } else if (streamEvent.type === 'error') {
+          sender.send('task:stream', {
+            taskId,
+            type: 'error',
+            error: streamEvent.error,
+          })
+          activeTasks.delete(taskId)
+          return { error: streamEvent.error }
+        }
+      }
+
       activeTasks.delete(taskId)
-      return result
-    } catch (error) {
+      return { reply: finalResponse }
+    } catch (err) {
       activeTasks.delete(taskId)
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error('[IPC] Task error:', errorMessage)
-      return { sessionId, error: errorMessage }
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      return { error: errorMessage }
     }
   })
 
@@ -158,21 +153,6 @@ export function registerIpcHandlers(gatewayManager: GatewayManager) {
     if (task) {
       task.cancel()
       activeTasks.delete(taskId)
-    }
-  })
-
-  // --- Dependency check ---
-  ipcMain.handle('dep:check-all', async () => {
-    const cliAvailable = await ClaudeCLIAdapter.isAvailable()
-
-    return {
-      claude: {
-        configured: cliAvailable,
-        mode: 'cli',
-        model: (configStore.get('claudeModel') as string) || 'claude-sonnet-4-5-20250929',
-        cliAvailable,
-      },
-      platform: process.platform,
     }
   })
 }

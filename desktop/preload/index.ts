@@ -3,43 +3,71 @@ import { contextBridge, ipcRenderer } from 'electron'
 const api = {
   // Config
   getConfig: (key: string) => ipcRenderer.invoke('config:get', key),
-  setConfig: (key: string, value: unknown) =>
-    ipcRenderer.invoke('config:set', key, value),
-
-  // Claude CLI
-  checkClaude: () => ipcRenderer.invoke('claude:check') as Promise<{
-    configured: boolean
-    cliAvailable: boolean
-  }>,
-  useCLI: (model?: string) =>
-    ipcRenderer.invoke('claude:use-cli', model) as Promise<{
-      ok: boolean
-      error?: string
-    }>,
-  getClaudeConfig: () => ipcRenderer.invoke('claude:get-config') as Promise<{
-    mode: 'cli'
-    model: string
-    cliAvailable: boolean
-  }>,
+  setConfig: (key: string, value: unknown) => ipcRenderer.invoke('config:set', key, value),
 
   // Shell
   openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
 
-  // Dependencies
-  checkDeps: () => ipcRenderer.invoke('dep:check-all') as Promise<{
-    claude: {
+  // Provider management
+  provider: {
+    list: () => ipcRenderer.invoke('provider:list') as Promise<{
+      presets: any[]
+      custom: any[]
+    }>,
+    statuses: () => ipcRenderer.invoke('provider:statuses') as Promise<Array<{
+      providerId: string
       configured: boolean
-      mode: 'cli'
+      authMode?: 'api_key' | 'oauth'
+      email?: string
+      maskedKey?: string
+      defaultModel?: string
+    }>>,
+    saveAuth: (auth: {
+      providerId: string
+      mode: 'api_key' | 'oauth'
+      apiKey?: string
+      accessToken?: string
+      email?: string
+    }) => ipcRenderer.invoke('provider:save-auth', auth) as Promise<{ ok: boolean }>,
+    deleteAuth: (providerId: string) =>
+      ipcRenderer.invoke('provider:delete-auth', providerId) as Promise<{ ok: boolean }>,
+    test: (providerId: string, apiKey: string, baseUrl?: string, model?: string) =>
+      ipcRenderer.invoke('provider:test', providerId, apiKey, baseUrl, model) as Promise<{ ok: boolean; error?: string }>,
+    setDefaultModel: (providerId: string, modelId: string) =>
+      ipcRenderer.invoke('provider:set-default-model', providerId, modelId) as Promise<{ ok: boolean }>,
+    setActive: (providerId: string, model: string) =>
+      ipcRenderer.invoke('provider:set-active', providerId, model) as Promise<{ ok: boolean }>,
+    getActive: () => ipcRenderer.invoke('provider:get-active') as Promise<{
+      providerId: string
       model: string
-      cliAvailable: boolean
-    }
-    platform: string
-  }>,
+    } | null>,
+    addCustom: (provider: any) =>
+      ipcRenderer.invoke('provider:add-custom', provider) as Promise<{ ok: boolean }>,
+    removeCustom: (id: string) =>
+      ipcRenderer.invoke('provider:remove-custom', id) as Promise<{ ok: boolean }>,
+  },
 
-  // Tasks — with streaming support
-  createTask: (taskId: string, message: string) =>
-    ipcRenderer.invoke('task:create', taskId, message) as Promise<{
-      sessionId: string
+  // OAuth
+  oauth: {
+    start: (providerId: string) =>
+      ipcRenderer.invoke('oauth:start', providerId) as Promise<{ ok: boolean }>,
+    cancel: (providerId: string) =>
+      ipcRenderer.invoke('oauth:cancel', providerId) as Promise<{ ok: boolean }>,
+    onStatus: (callback: (event: {
+      providerId: string
+      status: 'device_code' | 'polling' | 'success' | 'error'
+      info?: { userCode: string; verificationUri: string; expiresIn: number }
+      error?: string
+    }) => void) => {
+      const handler = (_event: unknown, data: any) => callback(data)
+      ipcRenderer.on('oauth:status', handler)
+      return () => { ipcRenderer.removeListener('oauth:status', handler) }
+    },
+  },
+
+  // Tasks
+  createTask: (taskId: string, message: string, providerId?: string, model?: string) =>
+    ipcRenderer.invoke('task:create', taskId, message, providerId, model) as Promise<{
       reply?: string
       error?: string
     }>,
@@ -55,28 +83,7 @@ const api = {
   }) => void) => {
     const handler = (_event: unknown, streamEvent: any) => callback(streamEvent)
     ipcRenderer.on('task:stream', handler)
-    return () => ipcRenderer.removeListener('task:stream', handler)
-  },
-
-  // Gateway
-  gateway: {
-    start: () => ipcRenderer.invoke('gateway:start'),
-    stop: () => ipcRenderer.invoke('gateway:stop'),
-    getStatus: () => ipcRenderer.invoke('gateway:status'),
-    rpc: (method: string, params?: unknown) =>
-      ipcRenderer.invoke('gateway:rpc', method, params),
-    sendMessage: (content: string, options?: { model?: string }) =>
-      ipcRenderer.invoke('gateway:chat', content, options),
-    onStatus: (callback: (status: any) => void) => {
-      const handler = (_event: unknown, status: any) => callback(status)
-      ipcRenderer.on('gateway:status', handler)
-      return () => ipcRenderer.removeListener('gateway:status', handler)
-    },
-    onMessage: (callback: (message: any) => void) => {
-      const handler = (_event: unknown, message: any) => callback(message)
-      ipcRenderer.on('gateway:message', handler)
-      return () => ipcRenderer.removeListener('gateway:message', handler)
-    },
+    return () => { ipcRenderer.removeListener('task:stream', handler) }
   },
 }
 

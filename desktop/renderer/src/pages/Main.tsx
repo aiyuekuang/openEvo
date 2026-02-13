@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
 import { useTasks } from '../hooks/useTasks'
 import { TaskGrid } from '../components/TaskGrid'
 import { TaskInput } from '../components/TaskInput'
-import { Settings, Terminal } from 'lucide-react'
+import { Settings } from 'lucide-react'
 
 interface Props {
   onOpenSettings: () => void
@@ -32,13 +31,6 @@ export function Main({ onOpenSettings }: Props) {
             </svg>
           </div>
           <span className="text-sm font-medium text-[#bcbec4]">AI Skill Forge</span>
-
-          {/* 模式标识 - CLI 模式 */}
-          <div className="flex items-center gap-1.5 rounded-full border border-[#464951] px-2 py-0.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_4px_rgba(74,222,128,0.6)]" />
-            <Terminal size={10} className="text-[#7d818a]" />
-            <span className="text-[10px] text-[#7d818a]">CLI</span>
-          </div>
         </div>
 
         <div className="ml-auto flex items-center gap-3">
