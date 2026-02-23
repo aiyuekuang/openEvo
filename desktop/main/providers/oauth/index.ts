@@ -6,8 +6,10 @@ import { setProviderAuth } from '../store'
 import { requestMiniMaxDeviceCode, pollMiniMaxToken } from './minimax'
 import { requestQwenDeviceCode, pollQwenToken } from './qwen'
 import { requestCopilotDeviceCode, pollCopilotToken } from './copilot'
+import { requestGitHubDeviceCode, pollGitHubToken } from './github-token'
+import { ConfigStore } from '../../config/store'
 
-export type OAuthProviderId = 'github-copilot' | 'minimax-portal' | 'qwen-portal'
+export type OAuthProviderId = 'github-copilot' | 'minimax-portal' | 'qwen-portal' | 'github-token'
 
 export interface OAuthDeviceCodeInfo {
   userCode: string
@@ -133,6 +135,31 @@ export async function startOAuthFlow(
           refreshToken: token.githubToken,
           expiresAt: token.copilotTokenExpiresAt,
         })
+
+        sendStatus({ status: 'success' })
+        break
+      }
+
+      case 'github-token': {
+        const ghDeviceCode = await requestGitHubDeviceCode()
+
+        sendStatus({
+          status: 'device_code',
+          info: {
+            userCode: ghDeviceCode.userCode,
+            verificationUri: ghDeviceCode.verificationUri,
+            expiresIn: ghDeviceCode.expiresIn,
+          },
+        })
+
+        shell.openExternal(ghDeviceCode.verificationUri)
+        sendStatus({ status: 'polling' })
+
+        const ghToken = await pollGitHubToken(ghDeviceCode, controller.signal)
+
+        // 存到 ConfigStore（与手动输入共用同一个 key）
+        const configStore = new ConfigStore()
+        configStore.set('githubToken', ghToken)
 
         sendStatus({ status: 'success' })
         break

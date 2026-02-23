@@ -1,0 +1,55 @@
+{
+  "name": "file_read",
+  "description": "读取文件内容。支持指定行范围（offset + limit）读取大文件的片段。",
+  "category": "devtools",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "type": "string",
+        "description": "要读取的文件的绝对路径"
+      },
+      "offset": {
+        "type": "number",
+        "description": "起始行号（从 1 开始），省略则从头开始"
+      },
+      "limit": {
+        "type": "number",
+        "description": "读取的行数上限，省略则读取全部（最多 2000 行）"
+      }
+    },
+    "required": ["file_path"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "content": {
+        "type": "string",
+        "description": "文件内容（带行号前缀）"
+      },
+      "total_lines": {
+        "type": "number",
+        "description": "文件总行数"
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "内容是否被截断"
+      },
+      "error": {
+        "type": "string",
+        "description": "错误信息"
+      }
+    },
+    "required": ["content"]
+  },
+
+  "mode": "code",
+  "calls": [],
+  "version": "1.0.0",
+  "tags": ["devtools", "filesystem", "builtin"],
+  "author": "openevo-team",
+  "timeout": 10000,
+  "retry": 0
+}

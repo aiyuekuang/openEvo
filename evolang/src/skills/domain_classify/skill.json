@@ -1,0 +1,83 @@
+{
+  "name": "domain_classify",
+  "description": "分析任务描述，识别所属行业领域，提取关键词，列出完成任务所需的能力清单，并匹配已有 Skill。",
+  "category": "system",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "task": {
+        "type": "string",
+        "description": "用户任务描述"
+      },
+      "available_skills": {
+        "type": "array",
+        "$resolve": "skills.list",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "category": { "type": "string" }
+          }
+        },
+        "description": "当前已注册的可用 Skill 列表（由系统自动注入）"
+      }
+    },
+    "required": ["task"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "industry": {
+        "type": "string",
+        "description": "行业大类（如 fintech, healthcare, e-commerce, devtools）"
+      },
+      "subdomain": {
+        "type": "string",
+        "description": "细分领域（如 payment-processing, inventory-management）"
+      },
+      "keywords": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "技术关键词，用于后续搜索"
+      },
+      "required_capabilities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "能力名称（snake_case，可作为 Skill 名）"
+            },
+            "description": {
+              "type": "string",
+              "description": "能力描述"
+            },
+            "can_match_existing": {
+              "type": "boolean",
+              "description": "是否可以匹配到已有 Skill"
+            },
+            "existing_skill": {
+              "type": "string",
+              "description": "匹配到的已有 Skill 名称（仅当 can_match_existing=true）"
+            }
+          },
+          "required": ["name", "description", "can_match_existing"]
+        },
+        "description": "完成任务所需的能力清单"
+      }
+    },
+    "required": ["industry", "subdomain", "keywords", "required_capabilities"]
+  },
+
+  "mode": "llm",
+  "calls": [],
+  "version": "1.0.0",
+  "tags": ["system", "planning", "builtin"],
+  "author": "openevo-team",
+  "timeout": 20000,
+  "retry": 1
+}

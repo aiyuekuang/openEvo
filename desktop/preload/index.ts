@@ -65,6 +65,59 @@ const api = {
     },
   },
 
+  // Memory
+  memory: {
+    load: () => ipcRenderer.invoke('memory:load') as Promise<string>,
+    save: (content: string) =>
+      ipcRenderer.invoke('memory:save', content) as Promise<{ ok: boolean }>,
+    append: (entry: string) =>
+      ipcRenderer.invoke('memory:append', entry) as Promise<{ ok: boolean }>,
+    dailyLog: (dateStr?: string) =>
+      ipcRenderer.invoke('memory:daily-log', dateStr) as Promise<string>,
+    dailyLogAppend: (entry: string, dateStr?: string) =>
+      ipcRenderer.invoke('memory:daily-log-append', entry, dateStr) as Promise<{ ok: boolean }>,
+    listLogs: () => ipcRenderer.invoke('memory:list-logs') as Promise<string[]>,
+    getDir: () => ipcRenderer.invoke('memory:get-dir') as Promise<string>,
+    search: (query: string, limit?: number) =>
+      ipcRenderer.invoke('memory:search', query, limit) as Promise<{
+        results: Array<{ id: string; path: string; snippet: string; score: number }>
+        error?: string
+      }>,
+    syncIndex: () =>
+      ipcRenderer.invoke('memory:sync-index') as Promise<{ ok: boolean; error?: string }>,
+    indexStatus: () =>
+      ipcRenderer.invoke('memory:index-status') as Promise<{
+        chunkCount: number
+        fileCount: number
+        fts5Available: boolean
+        error?: string
+      }>,
+  },
+
+  // Skills
+  skills: {
+    list: () => ipcRenderer.invoke('skills:list') as Promise<{
+      skills: Array<{
+        name: string
+        description: string
+        category: string
+        mode: string
+        version: string
+        tags: string[]
+      }>
+      baseDir?: string
+      dirs?: { system: string; market: string; custom: string }
+      error?: string
+    }>,
+    resetSystem: () =>
+      ipcRenderer.invoke('skills:reset-system') as Promise<{
+        ok: boolean
+        total?: number
+        skills?: string[]
+        error?: string
+      }>,
+  },
+
   // Tasks
   createTask: (taskId: string, message: string, providerId?: string, model?: string) =>
     ipcRenderer.invoke('task:create', taskId, message, providerId, model) as Promise<{
@@ -72,14 +125,33 @@ const api = {
       error?: string
     }>,
   cancelTask: (id: string) => ipcRenderer.invoke('task:cancel', id),
+  loadAllTasks: () => ipcRenderer.invoke('task:load-all') as Promise<Array<{
+    id: string
+    sessionId: string
+    title: string
+    message: string
+    status: 'pending' | 'running' | 'done' | 'error'
+    createdAt: number
+    conversation: Array<{ role: string; content: string; timestamp: number }>
+    images: string[]
+    steps: any[]
+    error?: string
+  }>>,
+  deleteTask: (id: string) => ipcRenderer.invoke('task:delete', id) as Promise<{ ok: boolean }>,
 
   // Task stream events
   onTaskStream: (callback: (event: {
     taskId: string
-    type: 'token' | 'error'
+    type: 'token' | 'error' | 'memory-saved' | 'tool_call' | 'tool_result'
     content?: string
     fullResponse?: string
     error?: string
+    entries?: string[]
+    toolCall?: { id: string; name: string; arguments: Record<string, unknown> }
+    toolResult?: { toolCallId: string; content: string; isError?: boolean }
+    depth?: number
+    skillName?: string
+    duration?: number
   }) => void) => {
     const handler = (_event: unknown, streamEvent: any) => callback(streamEvent)
     ipcRenderer.on('task:stream', handler)

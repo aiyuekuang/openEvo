@@ -4,8 +4,16 @@
     "composite": true,
     "outDir": "./dist/main",
     "lib": ["ES2022"],
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "evolang": ["../evolang/src/index"],
+      "evolang/*": ["../evolang/src/*"]
+    }
   },
   "include": ["main/**/*"],
-  "exclude": ["main/gateway/**", "main/task-handler.ts", "main/llm/**"]
+  "exclude": ["main/gateway/**", "main/task-handler.ts", "main/llm/**"],
+  "references": [
+    { "path": "../evolang" }
+  ]
 }

@@ -1,0 +1,127 @@
+{
+  "name": "intent_recognize",
+  "description": "EvoLang 核心路由引擎。分析用户输入，识别意图、提取实体、规划执行路径。这是处理每条消息的第一步 — 先理解要做什么，再决定怎么做。当现有 Skill 无法满足时，自动路由到 task_planner 去获取/开发新 Skill。",
+  "category": "system",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "$resolve": "input.message",
+        "description": "用户输入的原始文本（由系统自动注入）"
+      },
+      "available_skills": {
+        "type": "array",
+        "$resolve": "skills.listAll",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "category": { "type": "string" }
+          }
+        },
+        "description": "所有已注册的 Skill 列表（含 system 类别，路由引擎必须看到全部 Skill 才能正确分发）"
+      },
+      "relevant_memories": {
+        "type": "string",
+        "$resolve": "memory.relevantMemories",
+        "description": "预取的相关记忆（Agent 在所有 Skill 执行前统一检索，所有 Skill 共享）"
+      },
+      "conversation_summary": {
+        "type": "string",
+        "description": "当前对话上下文摘要（多轮对话时由系统注入，可选）"
+      },
+      "retry_feedback": {
+        "type": "string",
+        "description": "上一次识别结果的反馈（置信分不足时的重试提示，可选）"
+      }
+    },
+    "required": ["message", "available_skills"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "intents": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "意图标识（如 casual_chat, ask_question, search_memory, store_memory, plan_task）"
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "置信度（0-1）"
+            },
+            "description": {
+              "type": "string",
+              "description": "一句话说明此意图"
+            }
+          },
+          "required": ["name", "confidence"]
+        },
+        "description": "识别到的意图，按置信度降序排列"
+      },
+      "entities": {
+        "type": "object",
+        "description": "从用户输入中提取的关键实体（人名、日期、数量、代码片段、领域等）"
+      },
+      "routing": {
+        "type": "object",
+        "properties": {
+          "strategy": {
+            "type": "string",
+            "enum": ["direct_answer", "single_skill", "multi_skill", "pipeline", "clarify"],
+            "description": "执行策略"
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "要调用的 Skill 名称（必须是 available_skills 中存在的）"
+                },
+                "input": {
+                  "type": "object",
+                  "description": "预填的输入参数（从 entities 中提取）"
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "选择此 Skill 的原因"
+                }
+              },
+              "required": ["name", "reason"]
+            },
+            "description": "建议调用的 Skill 列表（按执行顺序）"
+          },
+          "direct_response": {
+            "type": "string",
+            "description": "仅当 strategy=direct_answer 时：直接回复内容"
+          },
+          "clarification": {
+            "type": "string",
+            "description": "仅当 strategy=clarify 时：要追问用户的问题"
+          }
+        },
+        "required": ["strategy"]
+      }
+    },
+    "required": ["intents", "routing"]
+  },
+
+  "mode": "llm",
+  "calls": ["task_planner", "memory_search"],
+  "version": "1.0.0",
+  "tags": ["system", "routing", "core", "builtin"],
+  "author": "openevo-team",
+  "timeout": 15000,
+  "retry": 1
+}

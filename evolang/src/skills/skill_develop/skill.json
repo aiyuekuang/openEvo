@@ -1,0 +1,82 @@
+{
+  "name": "skill_develop",
+  "description": "根据描述自动开发新 Skill。使用 LLM 生成 skill.json 和实现文件（prompt.md 或 index.ts），写入自定义 Skill 目录。",
+  "category": "system",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Skill 名称（snake_case）"
+      },
+      "description": {
+        "type": "string",
+        "description": "Skill 功能描述"
+      },
+      "domain": {
+        "type": "string",
+        "description": "所属领域（如 fintech, devtools）"
+      },
+      "keywords": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "相关关键词"
+      },
+      "preferred_mode": {
+        "type": "string",
+        "enum": ["llm", "code"],
+        "description": "偏好的 Skill 模式（默认 llm）"
+      },
+      "upstream_output_schema": {
+        "type": "object",
+        "description": "上游 Skill 的 output schema（pipeline 场景）。传入后生成的 Skill input 会自动对齐上游字段名和类型"
+      },
+      "upstream_skill_name": {
+        "type": "string",
+        "description": "上游 Skill 名称（pipeline 场景，用于日志和提示）"
+      }
+    },
+    "required": ["name", "description"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "description": "是否成功创建"
+      },
+      "skill_name": {
+        "type": "string",
+        "description": "创建的 Skill 名称"
+      },
+      "skill_path": {
+        "type": "string",
+        "description": "Skill 目录路径"
+      },
+      "mode": {
+        "type": "string",
+        "description": "生成的 Skill 模式"
+      },
+      "files_created": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "创建的文件列表"
+      },
+      "error": {
+        "type": "string",
+        "description": "失败时的错误信息"
+      }
+    },
+    "required": ["success", "skill_name"]
+  },
+
+  "mode": "code",
+  "calls": [],
+  "version": "1.0.0",
+  "tags": ["system", "development", "builtin"],
+  "author": "openevo-team",
+  "timeout": 60000,
+  "retry": 0
+}

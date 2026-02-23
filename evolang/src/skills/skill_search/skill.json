@@ -1,0 +1,68 @@
+{
+  "name": "skill_search",
+  "description": "在 GitHub 上搜索匹配的 EvoLang Skill 仓库。支持关键词搜索、topic 过滤，计算匹配置信分。",
+  "category": "system",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "搜索关键词"
+      },
+      "keywords": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "技术关键词（用于增强搜索）"
+      },
+      "domain": {
+        "type": "string",
+        "description": "领域分类（用于过滤）"
+      },
+      "limit": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 20,
+        "description": "返回结果数量上限（默认 5）"
+      }
+    },
+    "required": ["query"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "仓库/Skill 名称" },
+            "repo": { "type": "string", "description": "GitHub owner/repo" },
+            "description": { "type": "string", "description": "仓库描述" },
+            "stars": { "type": "number", "description": "star 数" },
+            "url": { "type": "string", "description": "仓库 URL" },
+            "skill_json_url": { "type": "string", "description": "skill.json 的 raw URL" },
+            "has_skill_json": { "type": "boolean", "description": "是否包含 skill.json" },
+            "confidence": { "type": "number", "description": "匹配置信分（0-1）" }
+          },
+          "required": ["name", "repo", "url", "confidence"]
+        },
+        "description": "搜索结果，按置信分降序排列"
+      },
+      "total_found": {
+        "type": "number",
+        "description": "GitHub 返回的总结果数"
+      }
+    },
+    "required": ["results", "total_found"]
+  },
+
+  "mode": "code",
+  "calls": [],
+  "version": "1.0.0",
+  "tags": ["system", "search", "builtin"],
+  "author": "openevo-team",
+  "timeout": 30000,
+  "retry": 0
+}

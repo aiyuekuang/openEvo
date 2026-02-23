@@ -1,0 +1,56 @@
+{
+  "name": "file_search",
+  "description": "使用 glob 模式搜索文件。返回匹配的文件路径列表。例如 '**/*.ts' 匹配所有 TypeScript 文件。",
+  "category": "devtools",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "pattern": {
+        "type": "string",
+        "description": "Glob 模式（如 '**/*.ts'、'src/**/*.json'）"
+      },
+      "path": {
+        "type": "string",
+        "description": "搜索的根目录（绝对路径），省略则使用当前工作目录"
+      },
+      "limit": {
+        "type": "number",
+        "description": "返回结果数量上限（默认 100）"
+      }
+    },
+    "required": ["pattern"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "files": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "匹配的文件路径列表"
+      },
+      "total_matches": {
+        "type": "number",
+        "description": "匹配的文件总数"
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "结果是否被截断"
+      },
+      "error": {
+        "type": "string",
+        "description": "错误信息"
+      }
+    },
+    "required": ["files"]
+  },
+
+  "mode": "code",
+  "calls": [],
+  "version": "1.0.0",
+  "tags": ["devtools", "filesystem", "builtin"],
+  "author": "openevo-team",
+  "timeout": 30000,
+  "retry": 0
+}

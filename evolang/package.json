@@ -1,0 +1,14 @@
+{
+  "name": "evolang",
+  "version": "0.1.0",
+  "description": "A programming language runtime for LLM agents — with built-in memory",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "@types/node": "^22.10.0"
+  }
+}

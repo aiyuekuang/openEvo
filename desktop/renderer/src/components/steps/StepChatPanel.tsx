@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react'
-import { Send, Info } from 'lucide-react'
+import { Send, Info, ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
 import type { Task, TaskStep } from '../../types/task'
 
@@ -74,7 +74,7 @@ export function StepChatPanel({ task, selectedStep, onSendMessage }: StepChatPan
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       handleSend()
     }
@@ -103,20 +103,15 @@ export function StepChatPanel({ task, selectedStep, onSendMessage }: StepChatPan
             <div key={i} className="flex flex-col gap-1">
               {/* 消息头部 */}
               <div className="text-[9px] text-[#7d818a]">
-                {msg.role === 'user' ? '你' : 'AI'} · {formatTimestamp(msg.timestamp)}
+                {msg.role === 'user' ? '输入' : '输出'} · {formatTimestamp(msg.timestamp)}
               </div>
 
-              {/* 消息内容 */}
-              <div
-                className={clsx(
-                  'px-2.5 py-2 rounded-lg text-xs leading-relaxed',
-                  msg.role === 'user'
-                    ? 'bg-[#818cf810] border border-[#818cf830] text-[#e0e1e6]'
-                    : 'bg-[#464951] text-[#e0e1e6]'
-                )}
-              >
-                {msg.content}
-              </div>
+              {/* 消息内容 — 智能渲染 */}
+              {msg.role === 'assistant' ? (
+                <SmartContent content={msg.content} />
+              ) : (
+                <SkillInputView content={msg.content} />
+              )}
             </div>
           ))
         )}
@@ -189,6 +184,163 @@ function getPlaceholder(status: TaskStep['status']): string {
     default:
       return '输入消息...'
   }
+}
+
+/**
+ * 智能内容渲染 — 自动识别 JSON 结构并分块展示
+ * 不硬编码任何字段名，通用适配所有 Skill 输出
+ */
+function SmartContent({ content }: { content: string }) {
+  // 尝试 JSON 解析
+  let parsed: unknown = null
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    // 非 JSON — 纯文本渲染
+  }
+
+  // 对象类型 → 分字段展示
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    const entries = Object.entries(parsed as Record<string, unknown>)
+    if (entries.length === 0) {
+      return <div className="px-2.5 py-2 rounded-lg bg-[#464951] text-xs text-[#7d818a]">（空对象）</div>
+    }
+    return (
+      <div className="rounded-lg bg-[#464951] overflow-hidden divide-y divide-[#383b42]">
+        {entries.map(([key, value]) => (
+          <FieldBlock key={key} label={key} value={value} />
+        ))}
+      </div>
+    )
+  }
+
+  // 数组类型 → 列表展示
+  if (Array.isArray(parsed)) {
+    return (
+      <div className="rounded-lg bg-[#464951] overflow-hidden divide-y divide-[#383b42]">
+        {parsed.map((item, i) => (
+          <FieldBlock key={i} label={`[${i}]`} value={item} />
+        ))}
+      </div>
+    )
+  }
+
+  // 纯文本
+  return (
+    <div className="px-2.5 py-2 rounded-lg bg-[#464951] text-xs text-[#e0e1e6] leading-relaxed whitespace-pre-wrap">
+      {content}
+    </div>
+  )
+}
+
+/**
+ * 单个字段渲染块
+ */
+function FieldBlock({ label, value }: { label: string; value: unknown }) {
+  const [expanded, setExpanded] = useState(false)
+
+  // 字符串 → 直接展示
+  if (typeof value === 'string') {
+    // 短字符串一行显示，长字符串多行
+    const isLong = value.length > 80 || value.includes('\n')
+    return (
+      <div className="px-2.5 py-2">
+        <div className="text-[10px] text-[#818cf8] mb-1 font-medium">{label}</div>
+        <div className={clsx(
+          'text-xs text-[#e0e1e6] leading-relaxed',
+          isLong && 'whitespace-pre-wrap',
+        )}>
+          {value}
+        </div>
+      </div>
+    )
+  }
+
+  // 数字 / 布尔
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return (
+      <div className="px-2.5 py-2 flex items-center gap-2">
+        <span className="text-[10px] text-[#818cf8] font-medium">{label}</span>
+        <span className="text-xs text-[#e0e1e6] font-mono">{String(value)}</span>
+      </div>
+    )
+  }
+
+  // null / undefined
+  if (value == null) {
+    return (
+      <div className="px-2.5 py-2 flex items-center gap-2">
+        <span className="text-[10px] text-[#818cf8] font-medium">{label}</span>
+        <span className="text-xs text-[#7d818a] italic">null</span>
+      </div>
+    )
+  }
+
+  // 对象 / 数组 → 可折叠展示
+  const jsonStr = JSON.stringify(value, null, 2)
+  const isSmall = jsonStr.length < 120
+  return (
+    <div className="px-2.5 py-2">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1 text-[10px] text-[#818cf8] font-medium cursor-pointer hover:text-[#a5b4fc] transition-colors"
+      >
+        <ChevronDown size={10} className={clsx('transition-transform', !expanded && '-rotate-90')} />
+        {label}
+        {!expanded && (
+          <span className="text-[#7d818a] font-normal ml-1">
+            {Array.isArray(value) ? `[${(value as unknown[]).length}]` : '{...}'}
+          </span>
+        )}
+      </button>
+      {(expanded || isSmall) && (
+        <pre className="mt-1 text-[11px] text-[#bcbec4] font-mono leading-relaxed whitespace-pre-wrap break-all">
+          {jsonStr}
+        </pre>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Skill 输入参数视图 — 将 "调用 xxx:\n  key: value" 格式化显示
+ */
+function SkillInputView({ content }: { content: string }) {
+  const lines = content.split('\n')
+  const header = lines[0] // "调用 xxx:" 或 "调用 xxx()"
+  const params = lines.slice(1).filter(l => l.trim())
+
+  if (params.length === 0) {
+    return (
+      <div className="px-2.5 py-2 rounded-lg bg-[#818cf810] border border-[#818cf830] text-xs text-[#bcbec4]">
+        {header}
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg bg-[#818cf810] border border-[#818cf830] overflow-hidden">
+      <div className="px-2.5 py-1.5 text-[10px] text-[#818cf8] font-medium border-b border-[#818cf815]">
+        {header}
+      </div>
+      <div className="px-2.5 py-1.5 space-y-0.5">
+        {params.map((param, i) => {
+          const colonIdx = param.indexOf(':')
+          if (colonIdx === -1) {
+            return <div key={i} className="text-[11px] text-[#bcbec4]">{param.trim()}</div>
+          }
+          const key = param.slice(0, colonIdx).trim()
+          const val = param.slice(colonIdx + 1).trim()
+          return (
+            <div key={i} className="flex gap-1.5 text-[11px]">
+              <span className="text-[#7d818a] flex-shrink-0">{key}</span>
+              <span className="text-[#e0e1e6] truncate">{val}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 /**

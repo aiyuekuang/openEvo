@@ -1,0 +1,60 @@
+{
+  "name": "skill_install",
+  "description": "从 GitHub 仓库下载并安装 Skill 到 market 目录。使用 tarball API 下载（不需要 git），自动定位 skill.json 并复制到安装目录。",
+  "category": "system",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "repo": {
+        "type": "string",
+        "description": "GitHub 仓库（格式: owner/repo）"
+      },
+      "skill_name": {
+        "type": "string",
+        "description": "安装后的 Skill 名称（用作目录名）"
+      },
+      "branch": {
+        "type": "string",
+        "description": "分支名（默认 main）"
+      }
+    },
+    "required": ["repo", "skill_name"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "description": "是否安装成功"
+      },
+      "skill_name": {
+        "type": "string",
+        "description": "安装的 Skill 名称"
+      },
+      "installed_path": {
+        "type": "string",
+        "description": "安装目录路径"
+      },
+      "files": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "安装的文件列表"
+      },
+      "error": {
+        "type": "string",
+        "description": "失败时的错误信息"
+      }
+    },
+    "required": ["success", "skill_name"]
+  },
+
+  "mode": "code",
+  "calls": ["skill_validate"],
+  "version": "1.0.0",
+  "tags": ["system", "install", "builtin"],
+  "author": "openevo-team",
+  "timeout": 60000,
+  "retry": 0
+}

@@ -41,9 +41,36 @@ export interface ProviderStatus {
   defaultModel?: string
 }
 
+// --- Tool Use ---
+
+export interface ToolDefinition {
+  name: string
+  description: string
+  parameters: Record<string, unknown>  // JSON Schema
+}
+
+export interface ToolCall {
+  id: string
+  name: string
+  arguments: Record<string, unknown>
+}
+
+export interface ToolResult {
+  toolCallId: string
+  content: string
+  isError?: boolean
+}
+
+// --- Chat ---
+
+export type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
+  | { type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean }
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
-  content: string
+  content: string | ContentBlock[]
 }
 
 export interface ChatOptions {
@@ -52,11 +79,14 @@ export interface ChatOptions {
   maxTokens?: number
   temperature?: number
   stream?: boolean
+  tools?: ToolDefinition[]
+  toolChoice?: 'auto' | 'any' | 'none' | { name: string }
 }
 
 export interface StreamEvent {
-  type: 'token' | 'done' | 'error'
+  type: 'token' | 'done' | 'error' | 'tool_call'
   content?: string
   fullResponse?: string
   error?: string
+  toolCalls?: ToolCall[]
 }

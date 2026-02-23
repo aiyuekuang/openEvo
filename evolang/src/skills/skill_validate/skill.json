@@ -1,0 +1,52 @@
+{
+  "name": "skill_validate",
+  "description": "校验 Skill 包的安全性和结构合法性。检查 skill.json 必填字段、危险代码模式、文件类型白名单和大小限制。",
+  "category": "system",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "local_path": {
+        "type": "string",
+        "description": "Skill 包的本地目录路径（优先使用）"
+      },
+      "skill_json_url": {
+        "type": "string",
+        "description": "skill.json 的远程 URL（用于预检远程仓库）"
+      }
+    }
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "safe": {
+        "type": "boolean",
+        "description": "是否通过安全检查"
+      },
+      "skill_json_valid": {
+        "type": "boolean",
+        "description": "skill.json 结构是否合法"
+      },
+      "issues": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "阻断性问题（导致 safe=false）"
+      },
+      "warnings": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "非阻断性警告"
+      }
+    },
+    "required": ["safe", "skill_json_valid", "issues", "warnings"]
+  },
+
+  "mode": "code",
+  "calls": [],
+  "version": "1.0.0",
+  "tags": ["system", "security", "builtin"],
+  "author": "openevo-team",
+  "timeout": 10000,
+  "retry": 0
+}

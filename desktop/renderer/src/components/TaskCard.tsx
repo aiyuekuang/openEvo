@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, Loader, Square } from 'lucide-react'
 import clsx from 'clsx'
 import type { Task, TaskStep } from '../types/task'
@@ -29,7 +29,30 @@ const statusLabels = {
 
 export function TaskCard({ task, expanded, onToggle, onCancel, onSendStepMessage }: Props) {
   const [selectedStepId, setSelectedStepId] = useState<string | undefined>(undefined)
+  // 用户是否手动点击过步骤（手动选择后停止自动跟随）
+  const userManualSelect = useRef(false)
   const reply = task.conversation.find(m => m.role === 'assistant')?.content
+
+  // ═══ 自动跟随：任务运行时自动选中最新执行的步骤 ═══
+  useEffect(() => {
+    if (task.status !== 'running' || userManualSelect.current) return
+    const latest = findLatestActiveStep(task.steps)
+    if (latest && latest.id !== selectedStepId) {
+      setSelectedStepId(latest.id)
+    }
+  }, [task.steps, task.status])
+
+  // 任务完成或新任务开始时重置手动选择标记
+  useEffect(() => {
+    if (task.status !== 'running') {
+      userManualSelect.current = false
+    }
+  }, [task.status])
+
+  const handleSelectStep = (stepId: string | undefined) => {
+    userManualSelect.current = true
+    setSelectedStepId(stepId)
+  }
 
   // 查找选中的步骤
   const selectedStep = selectedStepId ? findStepById(task.steps, selectedStepId) : null
@@ -78,7 +101,13 @@ export function TaskCard({ task, expanded, onToggle, onCancel, onSendStepMessage
       <div className="flex items-center justify-between border-b border-[#464951] px-4 py-2.5">
         <div className="flex items-center gap-3">
           <div className={clsx('h-2.5 w-2.5 rounded-full', statusColors[task.status])} />
-          <h3 className="text-sm font-medium text-[#bcbec4]">{task.title}</h3>
+          <h3
+            className="text-sm font-medium text-[#bcbec4] cursor-pointer hover:text-white transition-colors"
+            onClick={() => handleSelectStep(undefined)}
+            title="查看最终输出"
+          >
+            {task.title}
+          </h3>
           <span className="text-xs text-[#7d818a]">{statusLabels[task.status]}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -104,15 +133,17 @@ export function TaskCard({ task, expanded, onToggle, onCancel, onSendStepMessage
         // 新版：步骤可视化视图
         <div className="flex h-80">
           {/* 左侧：步骤树 */}
-          <div className="flex-1 border-r border-[#464951] overflow-hidden">
-            <div className="px-3 py-2 border-b border-[#464951]">
+          <div className="flex-1 border-r border-[#464951] flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b border-[#464951] shrink-0">
               <span className="text-xs font-semibold text-[#e0e1e6]">执行步骤</span>
             </div>
-            <StepTree
-              steps={task.steps}
-              selectedStepId={selectedStepId}
-              onSelectStep={setSelectedStepId}
-            />
+            <div className="flex-1 overflow-y-auto terminal-scroll">
+              <StepTree
+                steps={task.steps}
+                selectedStepId={selectedStepId}
+                onSelectStep={handleSelectStep}
+              />
+            </div>
           </div>
 
           {/* 右侧：对话面板 */}
@@ -180,4 +211,26 @@ function findStepById(steps: TaskStep[], stepId: string): TaskStep | null {
     }
   }
   return null
+}
+
+/**
+ * 找到最新的活跃步骤（正在运行的，或最后一个完成的）
+ * 优先返回 running 状态的步骤，否则返回最后一个 done 步骤
+ */
+function findLatestActiveStep(steps: TaskStep[]): TaskStep | null {
+  let lastDone: TaskStep | null = null
+
+  for (const step of steps) {
+    if (step.status === 'running') return step
+    if (step.status === 'done') lastDone = step
+
+    // 递归检查子步骤
+    if (step.children?.length) {
+      const childActive = findLatestActiveStep(step.children)
+      if (childActive?.status === 'running') return childActive
+      if (childActive?.status === 'done') lastDone = childActive
+    }
+  }
+
+  return lastDone
 }

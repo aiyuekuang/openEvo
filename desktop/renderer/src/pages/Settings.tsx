@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Bot, Bell, Settings as SettingsIcon, Info, Loader2, Plus, Globe, Copy, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Bot, Bell, Settings as SettingsIcon, Info, Loader2, Plus, Globe, Copy, CheckCircle, FolderOpen, RotateCcw, Blocks, Github, Eye, EyeOff } from 'lucide-react'
 
 interface ProviderConfig {
   id: string
@@ -44,16 +44,23 @@ export function Settings({ onBack }: Props) {
   const [testResult, setTestResult] = useState<{ id: string; ok: boolean; error?: string } | null>(null)
   const [oauthFlows, setOauthFlows] = useState<Record<string, OAuthFlowState>>({})
   const [copiedCode, setCopiedCode] = useState(false)
+  const [githubToken, setGithubToken] = useState('')
+  const [githubTokenInput, setGithubTokenInput] = useState('')
+  const [editingGithubToken, setEditingGithubToken] = useState(false)
+  const [githubTokenVisible, setGithubTokenVisible] = useState(false)
+  const [githubSaved, setGithubSaved] = useState(false)
 
   async function loadData() {
     setLoading(true)
     try {
-      const [providerData, statusData] = await Promise.all([
+      const [providerData, statusData, savedGithubToken] = await Promise.all([
         window.api.provider.list(),
         window.api.provider.statuses(),
+        window.api.getConfig('githubToken'),
       ])
       setProviders([...providerData.presets, ...providerData.custom])
       setStatuses(statusData)
+      setGithubToken((savedGithubToken as string) || '')
     } catch (err) {
       console.error('Failed to load provider data:', err)
     }
@@ -160,6 +167,26 @@ export function Settings({ onBack }: Props) {
     await window.api.provider.setDefaultModel(providerId, modelId)
     await window.api.provider.setActive(providerId, modelId)
     await loadData()
+  }
+
+  async function handleSaveGithubToken() {
+    const token = githubTokenInput.trim()
+    await window.api.setConfig('githubToken', token || null)
+    setGithubToken(token)
+    setEditingGithubToken(false)
+    setGithubTokenInput('')
+    setGithubSaved(true)
+    setTimeout(() => setGithubSaved(false), 2000)
+  }
+
+  async function handleRemoveGithubToken() {
+    await window.api.setConfig('githubToken', null)
+    setGithubToken('')
+  }
+
+  function maskGithubToken(token: string): string {
+    if (token.length <= 8) return '****'
+    return token.slice(0, 4) + '····' + token.slice(-4)
   }
 
   const navItems: { id: NavItem; label: string; icon: typeof Bot; section: string }[] = [
@@ -515,6 +542,213 @@ export function Settings({ onBack }: Props) {
                       添加自定义 OpenAI 兼容供应商
                     </button>
                   </div>
+
+                  {/* GitHub Token Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Github size={14} className="text-[#7d818a]" />
+                      <span className="text-[13px] font-medium text-[#bcbec4]">GitHub 账号</span>
+                      <span className="text-[11px] text-[#7d818a]">— 用于 Skill 搜索和安装</span>
+                    </div>
+
+                    <div className="rounded-xl border border-[#464951] bg-[#383b42]">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-2 w-2 rounded-full ${githubToken ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]' : 'bg-[#464951]'}`} />
+                          <span className="text-[14px] font-medium text-[#bcbec4]">GitHub</span>
+                          {githubToken && (
+                            <span className="rounded bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold text-green-400">已登录</span>
+                          )}
+                          {githubSaved && (
+                            <span className="flex items-center gap-1 rounded bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold text-green-400">
+                              <CheckCircle size={10} /> 已保存
+                            </span>
+                          )}
+                          {getOAuthFlow('github-token').status === 'success' && (
+                            <span className="flex items-center gap-1 rounded bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold text-green-400">
+                              <CheckCircle size={10} /> 登录成功
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {githubToken && !editingGithubToken && getOAuthFlow('github-token').status === 'idle' && (
+                            <>
+                              <button
+                                onClick={() => { setEditingGithubToken(true); setGithubTokenInput(githubToken) }}
+                                className="cursor-pointer rounded-md bg-indigo-500/10 border border-indigo-500/40 px-3 py-1 text-[11px] text-indigo-400 transition-colors hover:bg-indigo-500/20"
+                              >
+                                编辑
+                              </button>
+                              <button
+                                onClick={handleRemoveGithubToken}
+                                className="cursor-pointer rounded-md border border-red-500/30 px-3 py-1 text-[11px] text-red-400 transition-colors hover:bg-red-500/10"
+                              >
+                                退出登录
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Not configured — show login options */}
+                      {!githubToken && !editingGithubToken && (() => {
+                        const ghFlow = getOAuthFlow('github-token')
+                        return (
+                          <div className="border-t border-[#464951] px-4 py-3 space-y-3">
+                            {/* OAuth login button or status */}
+                            {ghFlow.status === 'idle' && (
+                              <div className="flex flex-col gap-3">
+                                <button
+                                  onClick={() => handleStartOAuth('github-token')}
+                                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#24292e] border border-[#464951] px-4 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#2f363d]"
+                                >
+                                  <Github size={16} />
+                                  浏览器登录 GitHub
+                                </button>
+                                <div className="flex items-center gap-3">
+                                  <div className="h-px flex-1 bg-[#464951]" />
+                                  <span className="text-[11px] text-[#7d818a]">或手动输入 Token</span>
+                                  <div className="h-px flex-1 bg-[#464951]" />
+                                </div>
+                                <button
+                                  onClick={() => { setEditingGithubToken(true); setGithubTokenInput('') }}
+                                  className="cursor-pointer text-center text-[12px] text-indigo-400 hover:text-indigo-300"
+                                >
+                                  手动配置 Personal Access Token
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Device code display */}
+                            {(ghFlow.status === 'device_code' || ghFlow.status === 'polling') && ghFlow.userCode && (
+                              <div className="space-y-3">
+                                <p className="text-[12px] text-[#bcbec4]">
+                                  请在浏览器中输入以下验证码完成登录：
+                                </p>
+                                <div className="flex items-center justify-center gap-3">
+                                  <span className="rounded-lg bg-[#2b2d33] border border-[#464951] px-6 py-3 font-mono text-[20px] font-bold tracking-widest text-white">
+                                    {ghFlow.userCode}
+                                  </span>
+                                  <button
+                                    onClick={() => handleCopyCode(ghFlow.userCode!)}
+                                    className="cursor-pointer rounded-md border border-[#464951] p-2 text-[#7d818a] transition-colors hover:bg-[#464951] hover:text-white"
+                                  >
+                                    {copiedCode ? <CheckCircle size={14} className="text-green-400" /> : <Copy size={14} />}
+                                  </button>
+                                </div>
+                                {ghFlow.verificationUri && (
+                                  <p className="text-center text-[11px] text-[#7d818a]">
+                                    验证页面：{' '}
+                                    <button
+                                      onClick={() => window.api.openExternal(ghFlow.verificationUri!)}
+                                      className="cursor-pointer text-indigo-400 underline hover:text-indigo-300"
+                                    >
+                                      {ghFlow.verificationUri}
+                                    </button>
+                                  </p>
+                                )}
+                                <div className="flex items-center justify-center gap-2 text-[11px] text-[#7d818a]">
+                                  <Loader2 size={12} className="animate-spin" />
+                                  等待浏览器授权...
+                                </div>
+                                <div className="flex justify-center">
+                                  <button
+                                    onClick={() => handleCancelOAuth('github-token')}
+                                    className="cursor-pointer rounded-md border border-[#464951] px-4 py-1.5 text-[12px] text-[#bcbec4] transition-colors hover:bg-[#464951]"
+                                  >
+                                    取消
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Polling without code (initial state) */}
+                            {ghFlow.status === 'polling' && !ghFlow.userCode && (
+                              <div className="flex items-center justify-center gap-2 py-2 text-[12px] text-[#7d818a]">
+                                <Loader2 size={14} className="animate-spin" />
+                                正在连接 GitHub...
+                              </div>
+                            )}
+
+                            {/* Error */}
+                            {ghFlow.status === 'error' && (
+                              <div className="space-y-2">
+                                <p className="text-[12px] text-red-400">{ghFlow.error || '登录失败'}</p>
+                                <button
+                                  onClick={() => handleStartOAuth('github-token')}
+                                  className="cursor-pointer rounded-md bg-indigo-500/10 border border-indigo-500/40 px-3 py-1 text-[11px] text-indigo-400 transition-colors hover:bg-indigo-500/20"
+                                >
+                                  重试
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
+
+                      {/* Manual token editing form */}
+                      {editingGithubToken && (
+                        <div className="border-t border-[#464951] px-4 py-3 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <span className="w-14 text-[12px] text-[#7d818a]">Token</span>
+                            <div className="relative flex-1">
+                              <input
+                                type={githubTokenVisible ? 'text' : 'password'}
+                                value={githubTokenInput}
+                                onChange={e => setGithubTokenInput(e.target.value)}
+                                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                                className="w-full rounded-md border border-[#464951] bg-[#2b2d33] px-3 py-1.5 pr-9 text-[12px] text-[#bcbec4] placeholder-[#7d818a] outline-none focus:border-indigo-500"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => setGithubTokenVisible(!githubTokenVisible)}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-[#7d818a] hover:text-[#bcbec4]"
+                              >
+                                {githubTokenVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                              </button>
+                            </div>
+                          </div>
+                          <p className="pl-[68px] text-[11px] text-[#7d818a]">
+                            用于 GitHub API 搜索和下载 Skill。无 Token 时限 10 次/分钟，有 Token 可提升至 30 次/分钟。
+                            前往{' '}
+                            <button
+                              onClick={() => window.api.openExternal('https://github.com/settings/tokens')}
+                              className="cursor-pointer text-indigo-400 underline hover:text-indigo-300"
+                            >
+                              GitHub Settings → Tokens
+                            </button>
+                            {' '}创建。
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleSaveGithubToken}
+                              disabled={!githubTokenInput.trim()}
+                              className="cursor-pointer rounded-md bg-indigo-500 px-4 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-indigo-600 disabled:opacity-40"
+                            >
+                              保存
+                            </button>
+                            <button
+                              onClick={() => { setEditingGithubToken(false); setGithubTokenInput(''); setGithubTokenVisible(false) }}
+                              className="cursor-pointer rounded-md border border-[#464951] px-4 py-1.5 text-[12px] text-[#bcbec4] transition-colors hover:bg-[#464951]"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Configured info */}
+                      {githubToken && !editingGithubToken && (
+                        <div className="border-t border-[#464951] px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <span className="w-14 text-[12px] text-[#7d818a]">Token</span>
+                            <span className="font-mono text-[12px] text-[#8c8f96]">{maskGithubToken(githubToken)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -535,14 +769,237 @@ export function Settings({ onBack }: Props) {
             </div>
           )}
 
-          {(activeNav === 'notify' || activeNav === 'general') && (
+          {activeNav === 'general' && (
+            <SkillSettings />
+          )}
+
+          {activeNav === 'notify' && (
             <div className="mx-auto max-w-[720px]">
-              <h1 className="text-lg font-semibold text-[#bcbec4]">{navItems.find(n => n.id === activeNav)?.label}</h1>
+              <h1 className="text-lg font-semibold text-[#bcbec4]">通知设置</h1>
               <p className="mt-4 text-[13px] text-[#7d818a]">即将推出...</p>
             </div>
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ═══ Skill 管理设置组件 ═══
+
+interface SkillInfo {
+  name: string
+  description: string
+  category: string
+  mode: string
+  version: string
+  tags: string[]
+}
+
+interface SkillDirs {
+  system: string
+  market: string
+  custom: string
+}
+
+function SkillSettings() {
+  const [skills, setSkills] = useState<SkillInfo[]>([])
+  const [dirs, setDirs] = useState<SkillDirs | null>(null)
+  const [baseDir, setBaseDir] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [resetting, setResetting] = useState(false)
+  const [resetResult, setResetResult] = useState<{ ok: boolean; total?: number; error?: string } | null>(null)
+
+  async function loadSkillData() {
+    setLoading(true)
+    try {
+      const data = await window.api.skills.list()
+      setSkills(data.skills)
+      setDirs(data.dirs || null)
+      setBaseDir(data.baseDir || '')
+    } catch (err) {
+      console.error('Failed to load skills:', err)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => { loadSkillData() }, [])
+
+  async function handleResetSystem() {
+    setResetting(true)
+    setResetResult(null)
+    try {
+      const result = await window.api.skills.resetSystem()
+      setResetResult(result)
+      if (result.ok) {
+        await loadSkillData()
+      }
+    } catch (err) {
+      setResetResult({ ok: false, error: String(err) })
+    }
+    setResetting(false)
+    // 3 秒后清除提示
+    setTimeout(() => setResetResult(null), 3000)
+  }
+
+  function handleOpenDir(dirPath: string) {
+    window.api.openExternal(`file://${dirPath}`)
+  }
+
+  // 按 category 分组
+  const grouped = skills.reduce((acc, s) => {
+    const key = s.category || '未分类'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(s)
+    return acc
+  }, {} as Record<string, SkillInfo[]>)
+
+  const dirLabels: { key: keyof SkillDirs; label: string; desc: string }[] = [
+    { key: 'system', label: '系统技能', desc: '随应用更新，最低优先级' },
+    { key: 'market', label: '市场技能', desc: '技能市场安装，中间优先级' },
+    { key: 'custom', label: '自定义技能', desc: 'AI 自进化 + 用户自定义，最高优先级' },
+  ]
+
+  return (
+    <div className="mx-auto max-w-[720px] space-y-6">
+      <div>
+        <h1 className="text-lg font-semibold text-[#bcbec4]">通用设置</h1>
+        <p className="mt-1 text-[13px] text-[#7d818a]">管理 Skill 技能存储位置和内置技能</p>
+      </div>
+
+      {/* Skill 目录 */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <FolderOpen size={14} className="text-indigo-400" />
+          <span className="text-[13px] font-medium text-[#bcbec4]">Skill 存储目录</span>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 size={20} className="animate-spin text-indigo-400" />
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[#464951] bg-[#383b42] overflow-hidden">
+            {/* 基础目录 */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#464951]">
+              <div>
+                <span className="text-[12px] text-[#7d818a]">根目录</span>
+                <p className="mt-0.5 font-mono text-[12px] text-[#bcbec4]">{baseDir}</p>
+              </div>
+              <button
+                onClick={() => handleOpenDir(baseDir)}
+                className="cursor-pointer flex items-center gap-1.5 rounded-md border border-[#464951] px-3 py-1.5 text-[11px] text-[#7d818a] transition-colors hover:bg-[#464951] hover:text-[#bcbec4]"
+              >
+                <FolderOpen size={12} />
+                打开
+              </button>
+            </div>
+
+            {/* 三层目录 */}
+            {dirs && dirLabels.map(({ key, label, desc }) => (
+              <div key={key} className="flex items-center justify-between px-4 py-2.5 border-b border-[#464951] last:border-b-0">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-medium text-[#bcbec4]">{label}</span>
+                    <span className="text-[10px] text-[#7d818a]">{desc}</span>
+                  </div>
+                  <p className="mt-0.5 font-mono text-[11px] text-[#7d818a] truncate">{dirs[key]}</p>
+                </div>
+                <button
+                  onClick={() => handleOpenDir(dirs[key])}
+                  className="cursor-pointer flex-shrink-0 ml-3 flex items-center gap-1.5 rounded-md border border-[#464951] px-2.5 py-1 text-[11px] text-[#7d818a] transition-colors hover:bg-[#464951] hover:text-[#bcbec4]"
+                >
+                  <FolderOpen size={11} />
+                  打开
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 重置内置技能 */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <RotateCcw size={14} className="text-[#7d818a]" />
+          <span className="text-[13px] font-medium text-[#bcbec4]">内置技能管理</span>
+        </div>
+
+        <div className="rounded-xl border border-[#464951] bg-[#383b42] px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12px] text-[#bcbec4]">重置内置技能</p>
+              <p className="mt-0.5 text-[11px] text-[#7d818a]">清空系统 Skills 目录并从源码重新同步，不影响第三方和自定义技能</p>
+            </div>
+            <button
+              onClick={handleResetSystem}
+              disabled={resetting}
+              className="cursor-pointer flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-400 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+            >
+              {resetting ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+              {resetting ? '重置中...' : '重置'}
+            </button>
+          </div>
+
+          {resetResult && (
+            <div className={`mt-2 rounded-lg px-3 py-2 text-[11px] ${
+              resetResult.ok
+                ? 'bg-green-500/10 text-green-400'
+                : 'bg-red-500/10 text-red-400'
+            }`}>
+              {resetResult.ok
+                ? `重置成功，共 ${resetResult.total} 个技能`
+                : `重置失败: ${resetResult.error}`
+              }
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 已加载的技能列表 */}
+      {!loading && skills.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Blocks size={14} className="text-[#7d818a]" />
+            <span className="text-[13px] font-medium text-[#bcbec4]">已加载技能</span>
+            <span className="text-[11px] text-[#7d818a]">共 {skills.length} 个</span>
+          </div>
+
+          <div className="rounded-xl border border-[#464951] bg-[#383b42] overflow-hidden">
+            {Object.entries(grouped).map(([category, items], idx) => (
+              <div key={category}>
+                {idx > 0 && <div className="border-t border-[#464951]" />}
+                <div className="px-4 py-2 bg-[#2b2d33]/50">
+                  <span className="text-[11px] font-semibold text-[#7d818a] uppercase">{category}</span>
+                  <span className="ml-2 text-[10px] text-[#7d818a]">({items.length})</span>
+                </div>
+                {items.map(skill => (
+                  <div key={skill.name} className="flex items-center justify-between px-4 py-2 border-t border-[#464951]/50">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-medium text-[#bcbec4]">{skill.name}</span>
+                        <span className={`px-1.5 py-0.5 text-[9px] rounded font-medium ${
+                          skill.mode === 'llm'
+                            ? 'bg-indigo-500/15 text-indigo-400'
+                            : skill.mode === 'code'
+                              ? 'bg-green-500/15 text-green-400'
+                              : 'bg-amber-500/15 text-amber-400'
+                        }`}>
+                          {skill.mode}
+                        </span>
+                        {skill.version && (
+                          <span className="text-[10px] text-[#7d818a]">v{skill.version}</span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-[#7d818a] truncate">{skill.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

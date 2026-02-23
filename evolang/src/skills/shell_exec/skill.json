@@ -1,0 +1,55 @@
+{
+  "name": "shell_exec",
+  "description": "执行 shell 命令并返回输出。支持超时控制和工作目录设置。注意：危险命令（rm -rf /、格式化磁盘等）会被拦截。",
+  "category": "devtools",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "command": {
+        "type": "string",
+        "description": "要执行的 shell 命令"
+      },
+      "cwd": {
+        "type": "string",
+        "description": "工作目录（绝对路径），省略则使用当前目录"
+      },
+      "timeout_ms": {
+        "type": "number",
+        "description": "超时时间（毫秒），默认 120000（2 分钟）"
+      }
+    },
+    "required": ["command"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "stdout": {
+        "type": "string",
+        "description": "标准输出"
+      },
+      "stderr": {
+        "type": "string",
+        "description": "标准错误"
+      },
+      "exit_code": {
+        "type": "number",
+        "description": "退出码"
+      },
+      "error": {
+        "type": "string",
+        "description": "执行异常信息"
+      }
+    },
+    "required": ["exit_code"]
+  },
+
+  "mode": "code",
+  "calls": [],
+  "version": "1.0.0",
+  "tags": ["devtools", "shell", "builtin"],
+  "author": "openevo-team",
+  "timeout": 130000,
+  "retry": 0
+}

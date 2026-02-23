@@ -10,7 +10,7 @@ import { StepNode } from './StepNode'
 interface StepTreeProps {
   steps: TaskStep[]
   selectedStepId?: string
-  onSelectStep: (stepId: string) => void
+  onSelectStep: (stepId: string | undefined) => void
 }
 
 export function StepTree({ steps, selectedStepId, onSelectStep }: StepTreeProps) {

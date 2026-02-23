@@ -1,0 +1,55 @@
+{
+  "name": "file_edit",
+  "description": "对文件执行精确的字符串替换。在文件中找到 old_string 并替换为 new_string。old_string 必须在文件中唯一匹配。",
+  "category": "devtools",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "type": "string",
+        "description": "要编辑的文件的绝对路径"
+      },
+      "old_string": {
+        "type": "string",
+        "description": "要被替换的原始文本（必须在文件中唯一匹配）"
+      },
+      "new_string": {
+        "type": "string",
+        "description": "替换后的新文本"
+      },
+      "replace_all": {
+        "type": "boolean",
+        "description": "是否替换所有匹配项（默认 false，只替换第一个）"
+      }
+    },
+    "required": ["file_path", "old_string", "new_string"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "description": "是否替换成功"
+      },
+      "replacements": {
+        "type": "number",
+        "description": "替换的匹配数"
+      },
+      "error": {
+        "type": "string",
+        "description": "错误信息"
+      }
+    },
+    "required": ["success"]
+  },
+
+  "mode": "code",
+  "calls": [],
+  "version": "1.0.0",
+  "tags": ["devtools", "filesystem", "builtin"],
+  "author": "openevo-team",
+  "timeout": 10000,
+  "retry": 0
+}

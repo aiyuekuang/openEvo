@@ -1,0 +1,103 @@
+{
+  "name": "task_planner",
+  "description": "任务规划编排器。分析任务领域，获取所需 Skill（搜索安装或自动开发），返回完整执行方案。",
+  "category": "system",
+
+  "input": {
+    "type": "object",
+    "properties": {
+      "task": {
+        "type": "string",
+        "$resolve": "input.message",
+        "description": "用户任务描述（由系统自动注入）"
+      },
+      "available_skills": {
+        "type": "array",
+        "$resolve": "skills.list",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "category": { "type": "string" }
+          }
+        },
+        "description": "当前已注册的可用 Skill 列表（由系统自动注入）"
+      },
+      "prefer_existing": {
+        "type": "boolean",
+        "description": "优先使用已有 Skill（默认 true）"
+      }
+    },
+    "required": ["task"]
+  },
+
+  "output": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "object",
+        "properties": {
+          "industry": { "type": "string" },
+          "subdomain": { "type": "string" },
+          "keywords": { "type": "array", "items": { "type": "string" } }
+        },
+        "description": "领域分析结果"
+      },
+      "plan": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "step": { "type": "number" },
+            "action": {
+              "type": "string",
+              "enum": ["use_existing", "install_from_market", "develop_new"],
+              "description": "获取方式"
+            },
+            "skill_name": { "type": "string" },
+            "reason": { "type": "string" }
+          },
+          "required": ["step", "action", "skill_name", "reason"]
+        },
+        "description": "执行步骤"
+      },
+      "acquired_skills": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "source": {
+              "type": "string",
+              "enum": ["existing", "market", "developed"]
+            },
+            "status": {
+              "type": "string",
+              "enum": ["ready", "installed", "created", "failed"]
+            }
+          },
+          "required": ["name", "source", "status"]
+        },
+        "description": "所有获取到的 Skill 状态"
+      },
+      "ready": {
+        "type": "boolean",
+        "description": "所有 Skill 是否就绪"
+      },
+      "summary": {
+        "type": "string",
+        "description": "方案摘要"
+      }
+    },
+    "required": ["plan", "acquired_skills", "ready", "summary"]
+  },
+
+  "mode": "code",
+  "calls": ["domain_classify", "skill_search", "skill_validate", "skill_install", "skill_develop"],
+  "version": "1.0.0",
+  "tags": ["system", "planning", "builtin"],
+  "author": "openevo-team",
+  "timeout": 120000,
+  "retry": 0
+}
